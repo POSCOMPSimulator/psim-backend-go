@@ -1,23 +1,22 @@
 package auth
 
 import (
-	"net/http"
+	"context"
+	"os"
 
-	"google.golang.org/api/oauth2/v2"
+	"google.golang.org/api/idtoken"
 )
 
-func VerifyIdToken(idToken string) (string, error) {
+func VerifyIdToken(idToken string) (map[string]interface{}, bool, error) {
 
-	var httpClient = &http.Client{}
-
-	oauth2Service, err := oauth2.New(httpClient)
-	tokenInfoCall := oauth2Service.Tokeninfo()
-	tokenInfoCall.IdToken(idToken)
-	tokenInfo, err := tokenInfoCall.Do()
-
+	payload, err := idtoken.Validate(context.Background(), idToken, os.Getenv("CLIENT_ID"))
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
-	return tokenInfo.UserId, nil
+	if payload.Audience != os.Getenv("CLIENT_ID") {
+		return nil, false, nil
+	}
+
+	return payload.Claims, true, nil
 }

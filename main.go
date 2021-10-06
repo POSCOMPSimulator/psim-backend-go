@@ -1,11 +1,11 @@
 package main
 
 import (
-	"poscomp-simulator.com/backend/app"
+	"poscomp-simulator.com/backend/controllers"
 )
 
 func main() {
-	a := app.App{}
+	a := controllers.App{}
 	a.Initialize()
-	a.Run(":8010")
+	a.Run(":8060")
 }
