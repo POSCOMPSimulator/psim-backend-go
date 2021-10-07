@@ -9,6 +9,10 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 	RespondWithJSON(w, code, map[string]string{"error": message})
 }
 
+func RespondWithText(w http.ResponseWriter, code int, message string) {
+	RespondWithJSON(w, code, map[string]string{"text": message})
+}
+
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, _ := json.Marshal(payload)
 
