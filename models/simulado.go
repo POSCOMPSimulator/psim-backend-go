@@ -6,15 +6,19 @@ import (
 )
 
 type Simulado struct {
-	ID             int            `json:"id"`
+	BatchQuestoes
+
+	ID             int            `json:"id,omitempty"`
 	Nome           string         `json:"nome"`
 	Estado         int            `json:"estado"`
-	TempoLimite    int            `json:"tempo_limite"`
-	TempoRestante  int            `json:"tempo_restante"`
-	IdUsuario      string         `json:"id_usuario"`
+	TempoLimite    int            `json:"tempo_limite,omitempty"`
+	TempoRestante  int            `json:"tempo_restante,omitempty"`
+	IdUsuario      string         `json:"id_usuario,omitempty"`
 	Anos           []int          `json:"anos"`
 	Areas          []string       `json:"areas"`
 	NumeroQuestoes NumeroQuestoes `json:"numero_questoes"`
+	Correcao       Correcao       `json:"correcao,omitempty"`
+	Respostas      []string       `json:"respostas_atuais,omitempty"`
 }
 
 type BatchSimulados struct {
@@ -22,29 +26,17 @@ type BatchSimulados struct {
 	Simulados []Simulado `json:"simulados"`
 }
 
-type SimuladoRealizacao struct {
-	BatchQuestoes
-
-	ID            int      `json:"id"`
-	Respostas     []string `json:"respostas_atuais"`
-	TempoRestante int      `json:"tempo_restante"`
-}
-
-type SimuladoRespondido struct {
-	SimuladoRealizacao
-	Correcao Correcao `json:"correcao"`
+type BatchRespostas struct {
+	IDSimulado    int        `json:"-"`
+	Respostas     []Resposta `json:"respostas"`
+	TempoRestante int        `json:"tempo_restante"`
 }
 
 type NumeroQuestoes struct {
-	Tot int `json:"tot"`
+	Tot int `json:"tot,omitempty"`
 	Mat int `json:"mat"`
 	Fun int `json:"fun"`
 	Tec int `json:"tec"`
-}
-
-type BatchRespostas struct {
-	Respostas     []Resposta `json:"respostas"`
-	TempoRestante int        `json:"tempo_restante"`
 }
 
 type Resposta struct {
@@ -64,11 +56,15 @@ func (bs *BatchSimulados) Get(db *sql.DB) error {
 	return errors.New("Not implemented")
 }
 
+func (br *BatchRespostas) UpdateRespostas(db *sql.DB) error {
+	return errors.New("Not implemented")
+}
+
 func (s *Simulado) Create(db *sql.DB) error {
 	return errors.New("Not implemented")
 }
 
-func (s *SimuladoRespondido) Get(db *sql.DB) error {
+func (s *Simulado) Get(db *sql.DB) error {
 	return errors.New("Not implemented")
 }
 

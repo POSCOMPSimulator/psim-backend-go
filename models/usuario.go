@@ -6,7 +6,7 @@ import (
 )
 
 type Usuario struct {
-	GoogleID     string           `json:"google_id,omitempty"`
+	Email        string           `json:"email,omitempty"`
 	NivelAcesso  int16            `json:"nivel_acesso"`
 	Nome         string           `json:"nome"`
 	FotoPerfil   string           `json:"foto_perfil"`

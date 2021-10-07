@@ -19,7 +19,7 @@ type Questao struct {
 }
 
 type BatchQuestoes struct {
-	Questoes []Questao              `json:"questoes"`
+	Questoes []Questao              `json:"questoes,omitempty"`
 	Filtros  map[string]interface{} `json:"-"`
 }
 
