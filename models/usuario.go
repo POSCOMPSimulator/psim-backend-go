@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"os"
 )
 
 type Usuario struct {
@@ -24,6 +25,13 @@ type PorcentagemQuestoesFeitas struct {
 	Mat   int `json:"mat"`
 	Fun   int `json:"fun"`
 	Tec   int `json:"tec"`
+}
+
+func (u *Usuario) GetDummy() {
+	u.Email = os.Getenv("DUMMY_TOKEN")
+	u.FotoPerfil = "dummy.png"
+	u.Nome = "Dummy User"
+	u.NivelAcesso = 32767
 }
 
 func (u *Usuario) Create(db *sql.DB) error {
