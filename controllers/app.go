@@ -32,7 +32,6 @@ func (a *App) Initialize() {
 	a.initializeRoutes()
 
 	a.Cors = cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
