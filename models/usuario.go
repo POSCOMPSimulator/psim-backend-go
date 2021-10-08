@@ -53,5 +53,8 @@ func (u *Usuario) Promote(db *sql.DB) error {
 }
 
 func (u *Usuario) Delete(db *sql.DB) error {
-	return errors.New("Not implemented")
+	if _, err := db.Exec("DELETE FROM usuario WHERE email=$1", u.Email); err != nil {
+		return err
+	}
+	return nil
 }
