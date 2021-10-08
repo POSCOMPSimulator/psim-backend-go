@@ -35,11 +35,14 @@ func (u *Usuario) GetDummy() {
 }
 
 func (u *Usuario) Create(db *sql.DB) error {
-	return errors.New("Not implemented")
+	if _, err := db.Exec("INSERT INTO usuario(email, nome, foto_perfil, nivel_acesso) VALUES($1, $2, $3, $4)", u.Email, u.Nome, u.FotoPerfil, u.NivelAcesso); err != nil {
+		return errors.New("Usuário não pode ser criado.")
+	}
+	return nil
 }
 
 func (u *Usuario) Get(db *sql.DB) error {
-	if err := db.QueryRow("SELECT email, nome, foto_perfil, nivel_acesso WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.FotoPerfil, &u.NivelAcesso); err != nil {
+	if err := db.QueryRow("SELECT email, nome, foto_perfil, nivel_acesso FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.FotoPerfil, &u.NivelAcesso); err != nil {
 		return errors.New("Usuário não encontrado.")
 	}
 	return nil
