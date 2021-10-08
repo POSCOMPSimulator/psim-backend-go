@@ -39,7 +39,10 @@ func (u *Usuario) Create(db *sql.DB) error {
 }
 
 func (u *Usuario) Get(db *sql.DB) error {
-	return errors.New("Not implemented")
+	if err := db.QueryRow("SELECT email, nome, foto_perfil, nivel_acesso WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.FotoPerfil, &u.NivelAcesso); err != nil {
+		return errors.New("Usuário não encontrado.")
+	}
+	return nil
 }
 
 func (u *Usuario) Promote(db *sql.DB) error {
