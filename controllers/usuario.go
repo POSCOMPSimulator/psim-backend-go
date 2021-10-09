@@ -36,12 +36,11 @@ func (a *App) GetUsuario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.Completo = true
 	if err = user.Get(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
-
-	// TODO: Adicionar estatísticas
 
 	utils.RespondWithJSON(w, http.StatusOK, user)
 	return
