@@ -43,13 +43,22 @@ func (u *Usuario) Create(db *sql.DB) error {
 
 func (u *Usuario) Get(db *sql.DB) error {
 	if err := db.QueryRow("SELECT email, nome, foto_perfil, nivel_acesso FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.FotoPerfil, &u.NivelAcesso); err != nil {
-		return errors.New("Usuário não encontrado.")
+		if err == sql.ErrNoRows {
+			return errors.New("Usuário não encontrado.")
+		}
+		return err
 	}
 	return nil
 }
 
 func (u *Usuario) Promote(db *sql.DB) error {
-	return errors.New("Not implemented")
+	if err := db.QueryRow("UPDATE usuario SET nivel_acesso = $2 WHERE email = $1 RETURNING email", u.Email, u.NivelAcesso).Scan(&u.Email); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("Usuário não encontrado.")
+		}
+		return err
+	}
+	return nil
 }
 
 func (u *Usuario) Delete(db *sql.DB) error {
