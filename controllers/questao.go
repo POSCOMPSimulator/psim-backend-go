@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
 )
@@ -72,25 +71,13 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
-	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	if err != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-		return
-	}
-
-	if err = user.Get(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusNotFound, err.Error())
-		return
-	}
-
-	if user.NivelAcesso < 1 {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
+	if !utils.AuthUserModerator(a.DB, w, r) {
 		return
 	}
 
 	var errosq models.ErrosQuestao
 	vars := mux.Vars(r)
-
+	var err error
 	if value, ok := vars["id"]; ok {
 		errosq.ID, err = strconv.Atoi(value)
 		if err != nil {
@@ -112,19 +99,7 @@ func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 
-	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	if err != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-		return
-	}
-
-	if err = user.Get(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusNotFound, err.Error())
-		return
-	}
-
-	if user.NivelAcesso < 1 {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
+	if !utils.AuthUserModerator(a.DB, w, r) {
 		return
 	}
 
@@ -176,24 +151,12 @@ func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {}
 
 func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
 
-	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	if err != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-		return
-	}
-
-	if err = user.Get(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusNotFound, err.Error())
-		return
-	}
-
-	if user.NivelAcesso < 1 {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
+	if !utils.AuthUserModerator(a.DB, w, r) {
 		return
 	}
 
 	vars := mux.Vars(r)
-
+	var err error
 	var q models.Questao
 	if id, ok := vars["id"]; ok {
 		q.ID, err = strconv.Atoi(id)
