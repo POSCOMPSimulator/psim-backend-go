@@ -2,6 +2,7 @@ package questao
 
 import (
 	"database/sql"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -113,6 +114,17 @@ func (bq *BatchQuestoes) Get(db *sql.DB) error {
 		for _, q := range map_id_questao {
 			bq.Questoes = append(bq.Questoes, q)
 		}
+
+		sort.Slice(bq.Questoes, func(i, j int) bool {
+			if bq.Questoes[i].Ano < bq.Questoes[j].Ano {
+				return true
+			} else if bq.Questoes[i].Ano == bq.Questoes[j].Ano {
+				if bq.Questoes[i].Numero < bq.Questoes[j].Numero {
+					return true
+				}
+			}
+			return false
+		})
 
 	}
 
