@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -249,12 +248,15 @@ func (m *MensagemErro) Report(db *sql.DB) error {
 	}
 
 	if _, err := db.Exec("INSERT INTO sinalizacao_questao(id_questao, msg_err) VALUES($1, $2)", m.ID, m.Erro); err != nil {
-		fmt.Println(err)
 
 		if err.Error() == `pq: duplicate key value violates unique constraint "sinalizacao_questao_pkey"` {
 			return nil
 		}
 
+		return errors.New("Não foi possível reportar o erro.")
+	}
+
+	if _, err := db.Exec("UPDATE questao SET sinalizada = true WHERE id = $1", m.ID); err != nil {
 		return errors.New("Não foi possível reportar o erro.")
 	}
 
