@@ -32,6 +32,7 @@ type FiltroQuestao struct {
 }
 
 type ErrosQuestao struct {
+	ID    int      `json:"-"`
 	Erros []string `json:"erros"`
 }
 
@@ -205,8 +206,26 @@ func (sq *SumarioQuestoes) Get(db *sql.DB) error {
 	return nil
 }
 
-func (q *Questao) GetErros(db *sql.DB) error {
-	return errors.New("Not implemented")
+func (eq *ErrosQuestao) Get(db *sql.DB) error {
+
+	eq.Erros = []string{}
+
+	rows, err := db.Query("SELECT msg_err FROM sinalizacao_questao WHERE id_questao = $1", eq.ID)
+	if err != nil {
+		return errors.New("Não foi possível obter os erros.")
+	}
+
+	for rows.Next() {
+		var msg_err string
+		rows.Scan(&msg_err)
+		eq.Erros = append(eq.Erros, msg_err)
+	}
+
+	return nil
+}
+
+func (eq *ErrosQuestao) Solve(db *sql.DB) error {
+	return errors.New("Not implemented yet.")
 }
 
 func (q *Questao) Create(db *sql.DB) error {

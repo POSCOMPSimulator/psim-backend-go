@@ -27,6 +27,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/questao/{id}/", a.UpdateQuestao).Methods("PATCH")
 	a.Router.HandleFunc("/questao/{id}/", a.DeleteQuestao).Methods("DELETE")
 	a.Router.HandleFunc("/questao/{id}/erros/", a.GetErrosQuestao).Methods("GET")
+	a.Router.HandleFunc("/questao/{id}/erros/", a.SolveErrosQuestao).Methods("DELETE")
 
 	// Rotas de simulado
 	a.Router.HandleFunc("/simulado/", a.GetSimulados).Methods("GET")
