@@ -37,7 +37,7 @@ type ErrosQuestao struct {
 }
 
 type MensagemErro struct {
-	ID   int    `json:"-"`
+	ID   int    `json:"id_questao"`
 	Erro string `json:"mensagem_erro"`
 }
 
@@ -348,7 +348,72 @@ func (m *MensagemErro) Report(db *sql.DB) error {
 }
 
 func (q *Questao) Update(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	var queries = [3]string{
+		`UPDATE questao
+		 SET subarea = $1, alternativa_a = $2, alternativa_b = $3, alternativa_c = $4, alternativa_d = $5, alternativa_e = $6, gabarito = $7
+		 WHERE id = $8
+		`,
+		"INSERT INTO enunciado_questao(id_questao, ordem, texto) VALUES($1, $2, $3)",
+		"INSERT INTO imagem_questao(id_questao, tipo, url_img) VALUES($1, $2, $3)",
+	}
+
+	if _, err := db.Exec(queries[0], q.Subarea, q.Alternativas[0], q.Alternativas[1],
+		q.Alternativas[2], q.Alternativas[3], q.Alternativas[4], q.Resposta, q.ID); err != nil {
+		return errors.New("Questão não pôde ser editada.")
+	}
+
+	if _, err := db.Exec("DELETE FROM enunciado_questao WHERE id_questao = $1", q.ID); err != nil {
+		return errors.New("Questão não pôde ser editada.")
+	}
+
+	if _, err := db.Exec("DELETE FROM imagem_questao WHERE id_questao = $1", q.ID); err != nil {
+		return errors.New("Questão não pôde ser editada.")
+	}
+
+	for e, v := range q.Enunciado {
+		if _, err := db.Exec(queries[1], q.ID, e, v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.Enunciado {
+		if _, err := db.Exec(queries[2], q.ID, "", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.A {
+		if _, err := db.Exec(queries[2], q.ID, "A", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.B {
+		if _, err := db.Exec(queries[2], q.ID, "B", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.C {
+		if _, err := db.Exec(queries[2], q.ID, "C", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.D {
+		if _, err := db.Exec(queries[2], q.ID, "D", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	for _, v := range q.ImagensQuestao.E {
+		if _, err := db.Exec(queries[2], q.ID, "E", v); err != nil {
+			return errors.New("Questão não pôde ser editada.")
+		}
+	}
+
+	return nil
 }
 
 func (q *Questao) Delete(db *sql.DB) error {
