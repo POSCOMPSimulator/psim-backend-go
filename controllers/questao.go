@@ -55,6 +55,10 @@ func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
+	if !utils.AuthUserModerator(a.DB, w, r) {
+		return
+	}
+
 	var errosq questao.ErrosQuestao
 	var err error
 	vars := mux.Vars(r)
@@ -75,9 +79,9 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
-	// if !utils.AuthUserModerator(a.DB, w, r) {
-	// 	return
-	// }
+	if !utils.AuthUserModerator(a.DB, w, r) {
+		return
+	}
 
 	var errosq questao.ErrosQuestao
 	vars := mux.Vars(r)
@@ -104,9 +108,9 @@ func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 
-	// if !utils.AuthUserModerator(a.DB, w, r) {
-	// 	return
-	// }
+	if !utils.AuthUserModerator(a.DB, w, r) {
+		return
+	}
 
 	var q questao.Questao
 	decoder := json.NewDecoder(r.Body)
@@ -145,9 +149,9 @@ func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {
 
-	// if !utils.AuthUserModerator(a.DB, w, r) {
-	// 	return
-	// }
+	if !utils.AuthUserModerator(a.DB, w, r) {
+		return
+	}
 
 	var q questao.Questao
 	decoder := json.NewDecoder(r.Body)
@@ -166,9 +170,9 @@ func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
 
-	// if !utils.AuthUserModerator(a.DB, w, r) {
-	// 	return
-	// }
+	if !utils.AuthUserModerator(a.DB, w, r) {
+		return
+	}
 
 	vars := mux.Vars(r)
 	var err error
