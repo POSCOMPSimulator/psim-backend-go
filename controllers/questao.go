@@ -71,8 +71,24 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
+
+	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	if err = user.Get(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	if user.NivelAcesso < 1 {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
+		return
+	}
+
 	var errosq models.ErrosQuestao
-	var err error
 	vars := mux.Vars(r)
 
 	if value, ok := vars["id"]; ok {
@@ -158,4 +174,35 @@ func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {}
 
-func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {}
+func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
+
+	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	if err = user.Get(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	if user.NivelAcesso < 1 {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	var q models.Questao
+	if id, ok := vars["id"]; ok {
+		q.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	q.Delete(a.DB)
+}

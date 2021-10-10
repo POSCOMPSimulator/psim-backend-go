@@ -352,7 +352,13 @@ func (q *Questao) Update(db *sql.DB) error {
 }
 
 func (q *Questao) Delete(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	if _, err := db.Exec("DELETE FROM questao WHERE id = $1", q.ID); err != nil {
+		return errors.New("Não foi possível remover a questão.")
+	}
+
+	return nil
+
 }
 
 func (bq *BatchQuestoes) mountFilterQuery() (string, []interface{}) {
