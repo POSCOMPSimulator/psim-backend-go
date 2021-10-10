@@ -225,7 +225,34 @@ func (eq *ErrosQuestao) Get(db *sql.DB) error {
 }
 
 func (eq *ErrosQuestao) Solve(db *sql.DB) error {
-	return errors.New("Not implemented yet.")
+
+	queryString := "DELETE FROM sinalizacao_questao WHERE id_questao = $1 AND msg_err IN ("
+	msgs := []interface{}{eq.ID}
+
+	seps := map[bool]string{true: ",$", false: "$"}
+
+	if len(eq.Erros) == 0 {
+		return nil
+	}
+
+	for i, v := range eq.Erros {
+		queryString += seps[i > 0] + strconv.Itoa(i+2)
+		msgs = append(msgs, v)
+	}
+	queryString += ")"
+
+	if _, err := db.Exec(queryString, msgs...); err != nil {
+		return errors.New("Não foi possível resolver os erros.")
+	}
+
+	othereq := ErrosQuestao{ID: eq.ID, Erros: []string{}}
+	othereq.Get(db)
+
+	if len(othereq.Erros) == 0 {
+		db.Exec("UPDATE questao SET sinalizada = false WHERE id = $1", eq.ID)
+	}
+
+	return nil
 }
 
 func (q *Questao) Create(db *sql.DB) error {

@@ -70,7 +70,29 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithJSON(w, http.StatusOK, errosq)
 }
 
-func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {}
+func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
+	var errosq models.ErrosQuestao
+	var err error
+	vars := mux.Vars(r)
+
+	if value, ok := vars["id"]; ok {
+		errosq.ID, err = strconv.Atoi(value)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&errosq); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	errosq.Solve(a.DB)
+}
 
 func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 
