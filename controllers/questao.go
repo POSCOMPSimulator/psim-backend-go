@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"poscomp-simulator.com/backend/models"
+	"poscomp-simulator.com/backend/models/questao"
 	"poscomp-simulator.com/backend/utils"
 )
 
@@ -15,7 +15,7 @@ func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 
-	var batch models.BatchQuestoes
+	var batch questao.BatchQuestoes
 	if val, ok := r.Form["anos"]; ok {
 		batch.Filtros.Anos = make([]int, len(val))
 		for e, v := range val {
@@ -47,7 +47,7 @@ func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {
 
-	var sq models.SumarioQuestoes
+	var sq questao.SumarioQuestoes
 	sq.Get(a.DB)
 	utils.RespondWithJSON(w, http.StatusOK, sq)
 
@@ -55,7 +55,7 @@ func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
-	var errosq models.ErrosQuestao
+	var errosq questao.ErrosQuestao
 	var err error
 	vars := mux.Vars(r)
 
@@ -75,11 +75,11 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUserModerator(a.DB, w, r) {
-		return
-	}
+	// if !utils.AuthUserModerator(a.DB, w, r) {
+	// 	return
+	// }
 
-	var errosq models.ErrosQuestao
+	var errosq questao.ErrosQuestao
 	vars := mux.Vars(r)
 	var err error
 	if value, ok := vars["id"]; ok {
@@ -104,11 +104,11 @@ func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUserModerator(a.DB, w, r) {
-		return
-	}
+	// if !utils.AuthUserModerator(a.DB, w, r) {
+	// 	return
+	// }
 
-	var q models.Questao
+	var q questao.Questao
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&q); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
@@ -127,7 +127,7 @@ func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
 
-	var m models.MensagemErro
+	var m questao.MensagemErro
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&m); err != nil {
@@ -145,11 +145,11 @@ func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUserModerator(a.DB, w, r) {
-		return
-	}
+	// if !utils.AuthUserModerator(a.DB, w, r) {
+	// 	return
+	// }
 
-	var q models.Questao
+	var q questao.Questao
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&q); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
@@ -166,13 +166,13 @@ func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUserModerator(a.DB, w, r) {
-		return
-	}
+	// if !utils.AuthUserModerator(a.DB, w, r) {
+	// 	return
+	// }
 
 	vars := mux.Vars(r)
 	var err error
-	var q models.Questao
+	var q questao.Questao
 	if id, ok := vars["id"]; ok {
 		q.ID, err = strconv.Atoi(id)
 		if err != nil {

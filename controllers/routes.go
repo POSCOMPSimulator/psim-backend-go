@@ -22,9 +22,9 @@ func (a *App) initializeRoutes() {
 	// Rotas de questão
 	a.Router.HandleFunc("/questao/", a.GetQuestoes).Methods("GET")
 	a.Router.HandleFunc("/questao/", a.CreateQuestao).Methods("POST")
+	a.Router.HandleFunc("/questao/", a.ReportQuestao).Methods("PUT")
+	a.Router.HandleFunc("/questao/", a.UpdateQuestao).Methods("PATCH")
 	a.Router.HandleFunc("/questao/sumario/", a.GetQSumario).Methods("GET")
-	a.Router.HandleFunc("/questao/{id}/", a.ReportQuestao).Methods("PUT")
-	a.Router.HandleFunc("/questao/{id}/", a.UpdateQuestao).Methods("PATCH")
 	a.Router.HandleFunc("/questao/{id}/", a.DeleteQuestao).Methods("DELETE")
 	a.Router.HandleFunc("/questao/{id}/erros/", a.GetErrosQuestao).Methods("GET")
 	a.Router.HandleFunc("/questao/{id}/erros/", a.SolveErrosQuestao).Methods("DELETE")
