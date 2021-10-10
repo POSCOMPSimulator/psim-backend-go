@@ -46,7 +46,11 @@ func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {}
+func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {
+	var sq models.SumarioQuestoes
+	sq.Get(a.DB)
+	utils.RespondWithJSON(w, http.StatusOK, sq)
+}
 
 func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {}
 
