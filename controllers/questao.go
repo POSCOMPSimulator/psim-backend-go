@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
@@ -83,7 +84,31 @@ func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {}
+func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	var m models.MensagemErro
+	var err error
+	if id, ok := vars["id"]; ok {
+		m.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	if err = m.Report(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+}
 
 func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {}
 

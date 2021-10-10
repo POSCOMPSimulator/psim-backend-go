@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -33,6 +34,11 @@ type FiltroQuestao struct {
 
 type ErrosQuestao struct {
 	Erros []string `json:"erros"`
+}
+
+type MensagemErro struct {
+	ID   int    `json:"-"`
+	Erro string `json:"mensagem_erro"`
 }
 
 type ImagensQuestao struct {
@@ -233,8 +239,26 @@ func (q *Questao) Create(db *sql.DB) error {
 	return nil
 }
 
-func (q *Questao) Report(db *sql.DB) error {
-	return errors.New("Not implemented")
+func (m *MensagemErro) Report(db *sql.DB) error {
+
+	if err := db.QueryRow("SELECT id FROM questao WHERE id = $1", m.ID).Scan(&m.ID); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("Questão não foi encontrada.")
+		}
+		return err
+	}
+
+	if _, err := db.Exec("INSERT INTO sinalizacao_questao(id_questao, msg_err) VALUES($1, $2)", m.ID, m.Erro); err != nil {
+		fmt.Println(err)
+
+		if err.Error() == `pq: duplicate key value violates unique constraint "sinalizacao_questao_pkey"` {
+			return nil
+		}
+
+		return errors.New("Não foi possível reportar o erro.")
+	}
+
+	return nil
 }
 
 func (q *Questao) Update(db *sql.DB) error {
