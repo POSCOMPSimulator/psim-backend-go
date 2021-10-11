@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -109,4 +110,37 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {}
+func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
+	if !ok {
+		return
+	}
+
+	var c models.Comentario
+	vars := mux.Vars(r)
+	var err error
+
+	if id, ok := vars["id"]; ok {
+		c.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	if err := c.Get(a.DB); err != nil {
+		if err == sql.ErrNoRows {
+			utils.RespondWithError(w, http.StatusNotFound, "Comentário não foi encontrado.")
+		}
+		utils.RespondWithError(w, http.StatusBadRequest, "Não foi possível apagar o comentário.")
+	}
+
+	if user.Email == c.AutorID || user.NivelAcesso > 0 {
+		c.Delete(a.DB)
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}

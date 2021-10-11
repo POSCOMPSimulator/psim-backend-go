@@ -67,6 +67,15 @@ func (bc *BatchComentarios) GetComentariosQuestao(db *sql.DB) error {
 
 }
 
+func (c *Comentario) Get(db *sql.DB) error {
+
+	if err := db.QueryRow("SELECT id_usuario FROM comentario WHERE id = $1", c.ID).Scan(&c.AutorID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Comentario) Post(db *sql.DB) error {
 
 	query := "INSERT INTO comentario(data_publicacao, texto, id_usuario, id_questao) VALUES($1, $2, $3, $4)"
@@ -89,5 +98,11 @@ func (c *Comentario) Report(db *sql.DB) error {
 }
 
 func (c *Comentario) Delete(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	if _, err := db.Exec("DELETE FROM comentario WHERE id = $1", c.ID); err != nil {
+		return errors.New("Não foi possível deletar o comentário.")
+	}
+
+	return nil
+
 }
