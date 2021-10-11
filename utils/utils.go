@@ -24,7 +24,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func AuthUserModerator(db *sql.DB, w http.ResponseWriter, r *http.Request) bool {
+func AuthUserModerator(db *sql.DB, w http.ResponseWriter, r *http.Request, minLevel int16) bool {
 
 	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
 	if err != nil {
@@ -37,7 +37,7 @@ func AuthUserModerator(db *sql.DB, w http.ResponseWriter, r *http.Request) bool 
 		return false
 	}
 
-	if user.NivelAcesso < 1 {
+	if user.NivelAcesso >= minLevel {
 		RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
 		return false
 	}
