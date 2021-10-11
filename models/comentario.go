@@ -79,7 +79,13 @@ func (c *Comentario) Post(db *sql.DB) error {
 }
 
 func (c *Comentario) Report(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	if _, err := db.Exec("UPDATE comentario SET sinalizado = sinalizado + 1 WHERE id = $1", c.ID); err != nil {
+		return errors.New("Não foi possível reportar o comentário.")
+	}
+
+	return nil
+
 }
 
 func (c *Comentario) Delete(db *sql.DB) error {

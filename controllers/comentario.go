@@ -86,6 +86,27 @@ func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {}
+func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
+
+	var c models.Comentario
+	vars := mux.Vars(r)
+	var err error
+
+	if id, ok := vars["id"]; ok {
+		c.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	if err := c.Report(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}
 
 func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {}

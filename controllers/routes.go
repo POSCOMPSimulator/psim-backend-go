@@ -41,7 +41,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/comentario/", a.GetComentariosSinalizados).Methods("GET")
 	a.Router.HandleFunc("/comentario/questao/{id}/", a.GetComentariosQuestao).Methods("GET")
 	a.Router.HandleFunc("/comentario/questao/{id}/", a.PostComentarioQuestao).Methods("POST")
-	a.Router.HandleFunc("/comentario/{cid}/", a.ReportComentario).Methods("PUT")
-	a.Router.HandleFunc("/comentario/{cid}/", a.DeleteComentario).Methods("DELETE")
+	a.Router.HandleFunc("/comentario/{id}/", a.ReportComentario).Methods("PUT")
+	a.Router.HandleFunc("/comentario/{id}/", a.DeleteComentario).Methods("DELETE")
 
 }
