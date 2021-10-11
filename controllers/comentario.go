@@ -167,8 +167,10 @@ func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
 
 	if user.Email == c.AutorID || user.NivelAcesso > 0 {
 		c.Delete(a.DB)
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	utils.RespondWithError(w, http.StatusUnauthorized, "Comentário não pertence ao usuário ou nível de acesso insuficiente.")
 
 }
