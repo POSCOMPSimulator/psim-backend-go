@@ -51,7 +51,7 @@ func (a *App) GetComentariosQuestao(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {
 
-	ok, user := utils.AuthUser(a.DB, w, r, 1)
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
 	if !ok {
 		return
 	}
@@ -107,6 +107,34 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+
+}
+
+func (a *App) CleanComentario(w http.ResponseWriter, r *http.Request) {
+
+	ok, _ := utils.AuthUser(a.DB, w, r, 1)
+	if !ok {
+		return
+	}
+
+	var c models.Comentario
+	vars := mux.Vars(r)
+	var err error
+
+	if id, ok := vars["id"]; ok {
+		c.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	if err := c.Clean(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 }
 

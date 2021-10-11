@@ -43,5 +43,6 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/comentario/questao/{id}/", a.PostComentarioQuestao).Methods("POST")
 	a.Router.HandleFunc("/comentario/{id}/", a.ReportComentario).Methods("PUT")
 	a.Router.HandleFunc("/comentario/{id}/", a.DeleteComentario).Methods("DELETE")
+	a.Router.HandleFunc("/comentario/{id}/reports/", a.CleanComentario).Methods("DELETE")
 
 }

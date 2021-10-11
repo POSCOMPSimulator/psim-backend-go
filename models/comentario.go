@@ -97,6 +97,16 @@ func (c *Comentario) Report(db *sql.DB) error {
 
 }
 
+func (c *Comentario) Clean(db *sql.DB) error {
+
+	if _, err := db.Exec("UPDATE comentario SET sinalizado = 0 WHERE id = $1", c.ID); err != nil {
+		return errors.New("Não foi possível limpar o comentário.")
+	}
+
+	return nil
+
+}
+
 func (c *Comentario) Delete(db *sql.DB) error {
 
 	if _, err := db.Exec("DELETE FROM comentario WHERE id = $1", c.ID); err != nil {
