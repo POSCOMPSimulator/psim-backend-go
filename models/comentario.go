@@ -41,7 +41,22 @@ func (bc *BatchComentarios) GetComentariosSinalizados(db *sql.DB) error {
 }
 
 func (bc *BatchComentarios) GetComentariosQuestao(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	bc.Comentarios = []Comentario{}
+	rows, err := db.Query("SELECT * FROM comentario WHERE id_questao = $1 ORDER BY data_publicacao DESC", bc.QuestaoID)
+	if err != nil {
+		return errors.New("Não foi possível selecionar os comentários.")
+	}
+
+	for rows.Next() {
+		var comment Comentario
+		rows.Scan(&comment.ID, &comment.DataPublicacao, &comment.Texto,
+			&comment.AutorID, &bc.QuestaoID, &comment.Sinalizado)
+		bc.Comentarios = append(bc.Comentarios, comment)
+	}
+
+	return nil
+
 }
 
 func (c *Comentario) Post(db *sql.DB) error {
