@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"poscomp-simulator.com/backend/auth"
+	"poscomp-simulator.com/backend/models"
 )
 
 func RespondWithError(w http.ResponseWriter, code int, message string) {
@@ -24,24 +25,24 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func AuthUser(db *sql.DB, w http.ResponseWriter, r *http.Request, minLevel int16) bool {
+func AuthUser(db *sql.DB, w http.ResponseWriter, r *http.Request, minLevel int16) (bool, models.Usuario) {
 
 	user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
 	if err != nil {
 		RespondWithError(w, http.StatusUnauthorized, err.Error())
-		return false
+		return false, models.Usuario{}
 	}
 
 	if err = user.Get(db); err != nil {
 		RespondWithError(w, http.StatusNotFound, err.Error())
-		return false
+		return false, models.Usuario{}
 	}
 
-	if user.NivelAcesso >= minLevel {
+	if user.NivelAcesso < minLevel {
 		RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a operação.")
-		return false
+		return false, models.Usuario{}
 	}
 
-	return true
+	return true, user
 
 }

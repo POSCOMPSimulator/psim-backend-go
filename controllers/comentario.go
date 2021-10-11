@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -11,7 +12,7 @@ import (
 
 func (a *App) GetComentariosSinalizados(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUser(a.DB, w, r, 1) {
+	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
 		return
 	}
 
@@ -47,7 +48,43 @@ func (a *App) GetComentariosQuestao(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {}
+func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 1)
+	if !ok {
+		return
+	}
+
+	var c models.Comentario
+	vars := mux.Vars(r)
+	var err error
+
+	c.AutorID = user.Email
+
+	if id, ok := vars["id"]; ok {
+		c.QuestaoID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&c); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	if err := c.Post(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}
 
 func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {}
 
