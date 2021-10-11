@@ -9,7 +9,7 @@ import (
 
 func (a *App) GetComentariosSinalizados(w http.ResponseWriter, r *http.Request) {
 
-	if !utils.AuthUserModerator(a.DB, w, r, 1) {
+	if !utils.AuthUser(a.DB, w, r, 1) {
 		return
 	}
 
