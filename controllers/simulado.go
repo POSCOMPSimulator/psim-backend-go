@@ -11,7 +11,24 @@ import (
 	"poscomp-simulator.com/backend/utils"
 )
 
-func (a *App) GetSimulados(w http.ResponseWriter, r *http.Request) {}
+func (a *App) GetSimulados(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
+	if !ok {
+		return
+	}
+
+	var bsim models.BatchSimulados
+	bsim.IDUsuario = user.Email
+
+	if err := bsim.Get(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, bsim)
+
+}
 
 func (a *App) CreateSimulado(w http.ResponseWriter, r *http.Request) {
 

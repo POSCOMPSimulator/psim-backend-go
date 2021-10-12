@@ -31,7 +31,7 @@ type Simulado struct {
 }
 
 type BatchSimulados struct {
-	IDUsuario int        `json:"-"`
+	IDUsuario string     `json:"-"`
 	Simulados []Simulado `json:"simulados"`
 }
 
@@ -51,6 +51,7 @@ type NumeroQuestoes struct {
 type Respostas map[int]string
 
 type Correcao struct {
+	ID              int            `json:"-"`
 	DataFinalizacao string         `json:"data_finalizacao"`
 	TempoRealizacao int            `json:"tempo_realizacao"`
 	Acertos         NumeroQuestoes `json:"acertos"`
@@ -59,7 +60,35 @@ type Correcao struct {
 }
 
 func (bs *BatchSimulados) Get(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	rows, err := db.Query("SELECT * FROM simulado WHERE id_usuario = $1", bs.IDUsuario)
+	if err != nil {
+		return errors.New("Não foi possível recuperar os simulados.")
+	}
+
+	bs.Simulados = []Simulado{}
+	for rows.Next() {
+		var sim Simulado
+		sim.NumeroQuestoes = &NumeroQuestoes{}
+
+		rows.Scan(&sim.ID, &sim.Nome, &sim.Estado, &sim.TempoLimite,
+			&sim.NumeroQuestoes.Tot, &sim.NumeroQuestoes.Mat, &sim.NumeroQuestoes.Fun,
+			&sim.NumeroQuestoes.Tec, &sim.TempoRestante, &sim.IdUsuario)
+
+		if sim.Estado == 2 {
+
+			if err := sim.getCorrecao(db); err != nil {
+				return err
+			}
+
+		}
+
+		bs.Simulados = append(bs.Simulados, sim)
+
+	}
+
+	return nil
+
 }
 
 func (br *BatchRespostas) UpdateRespostas(db *sql.DB) error {
@@ -202,8 +231,8 @@ func (s *Simulado) getEstado(db *sql.DB) error {
 	s.NumeroQuestoes = &NumeroQuestoes{}
 	var user string
 
-	if err := db.QueryRow("SELECT id_usuario, estado, tempo_restante FROM simulado WHERE id = $1", s.ID).
-		Scan(&user, &s.Estado, &s.TempoRestante); err != nil {
+	if err := db.QueryRow("SELECT id_usuario, estado, tempo_restante, tempo_limite FROM simulado WHERE id = $1", s.ID).
+		Scan(&user, &s.Estado, &s.TempoRestante, &s.TempoLimite); err != nil {
 		if err == sql.ErrNoRows {
 			return errors.New("Simulado não encontrado.")
 		}
@@ -339,4 +368,22 @@ func getNumeroMaximoQuestoes(db *sql.DB, anos []int) map[string]int {
 	}
 
 	return qtdQuestoes
+}
+
+func (s *Simulado) getCorrecao(db *sql.DB) error {
+
+	s.Correcao = &Correcao{}
+
+	if err := db.QueryRow("SELECT * FROM correcao WHERE id_simulado = $1", s.ID).
+		Scan(&s.Correcao.Brancos.Tot, &s.Correcao.Brancos.Mat, &s.Correcao.Brancos.Fun, &s.Correcao.Brancos.Tec,
+			&s.Correcao.Acertos.Tot, &s.Correcao.Acertos.Mat, &s.Correcao.Acertos.Fun, &s.Correcao.Acertos.Tec,
+			&s.Correcao.Erros.Tot, &s.Correcao.Erros.Mat, &s.Correcao.Erros.Fun, &s.Correcao.Erros.Tec,
+			&s.Correcao.DataFinalizacao); err != nil {
+		return errors.New("Não foi possível obter a correção")
+	}
+
+	s.Correcao.TempoRealizacao = s.TempoLimite - s.TempoRestante
+
+	return nil
+
 }
