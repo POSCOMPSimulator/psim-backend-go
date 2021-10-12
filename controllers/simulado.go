@@ -160,6 +160,8 @@ func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var bresp models.BatchRespostas
+		bresp.IDSimulado = sim.ID
+		bresp.IDUsuario = user.Email
 
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&bresp); err != nil {
@@ -167,7 +169,7 @@ func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := bresp.UpdateRespostas(a.DB); err != nil {
+		if err := bresp.Update(a.DB); err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -184,7 +186,50 @@ func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) UpdateRespostasSimulado(w http.ResponseWriter, r *http.Request) {}
+func (a *App) UpdateRespostasSimulado(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
+	if !ok {
+		return
+	}
+
+	var err error
+	var bres models.BatchRespostas
+	bres.IDUsuario = user.Email
+
+	vars := mux.Vars(r)
+	if id, ok := vars["id"]; ok {
+		bres.IDSimulado, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
+	}
+
+	defer r.Body.Close()
+
+	if r.Body == http.NoBody {
+		utils.RespondWithError(w, http.StatusBadRequest, "Body não encontrado.")
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&bres); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := bres.Update(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
 
 func (a *App) DeleteSimulado(w http.ResponseWriter, r *http.Request) {
 

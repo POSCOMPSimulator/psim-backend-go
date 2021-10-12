@@ -37,6 +37,7 @@ type BatchSimulados struct {
 
 type BatchRespostas struct {
 	IDSimulado    int       `json:"-"`
+	IDUsuario     string    `json:"-"`
 	Respostas     Respostas `json:"respostas"`
 	TempoRestante int       `json:"tempo_restante"`
 }
@@ -48,7 +49,7 @@ type NumeroQuestoes struct {
 	Tec int `json:"tec"`
 }
 
-type Respostas map[int]string
+type Respostas map[int]int
 
 type Correcao struct {
 	ID              int            `json:"-"`
@@ -91,8 +92,26 @@ func (bs *BatchSimulados) Get(db *sql.DB) error {
 
 }
 
-func (br *BatchRespostas) UpdateRespostas(db *sql.DB) error {
-	return errors.New("Not implemented")
+func (br *BatchRespostas) Update(db *sql.DB) error {
+
+	stmt, err := db.Prepare("UPDATE questoes_simulado SET resposta = $1 WHERE id_simulado = $2 AND id_usuario = $3 AND id_questao = $4")
+	if err != nil {
+		return errors.New("Não foi possível atualizar as respostas.")
+	}
+
+	for id, v := range br.Respostas {
+		_, err = stmt.Exec(v, br.IDSimulado, br.IDUsuario, id)
+		if err != nil {
+			return errors.New("Não foi possível atualizar as respostas.")
+		}
+	}
+
+	if _, err := db.Exec("UPDATE simulado SET tempo_restante = $1 WHERE id = $2 AND id_usuario = $3",
+		br.TempoRestante, br.IDSimulado, br.IDUsuario); err != nil {
+		return errors.New("Não foi possível atualizar as respostas.")
+	}
+
+	return nil
 }
 
 func (s *Simulado) Create(db *sql.DB) error {
@@ -348,7 +367,7 @@ func (s *Simulado) getQuestoes(db *sql.DB) error {
 
 func (s *Simulado) getRespostas(db *sql.DB) error {
 
-	s.Respostas = map[int]string{}
+	s.Respostas = map[int]int{}
 	rows, err := db.Query("SELECT id_questao, resposta FROM questoes_simulado WHERE id_simulado = $1", s.ID)
 	if err != nil {
 		return errors.New("Não foi possível obter as respostas.")
@@ -356,9 +375,14 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 
 	for rows.Next() {
 		var id int
-		var resp string
-		rows.Scan(&id, &resp)
+		var resp int
+		err := rows.Scan(&id, &resp)
 		s.Respostas[id] = resp
+
+		if err.Error() == `sql: Scan error on column index 1, name "resposta": converting NULL to int is unsupported` {
+			s.Respostas[id] = -1
+		}
+
 	}
 
 	return nil
