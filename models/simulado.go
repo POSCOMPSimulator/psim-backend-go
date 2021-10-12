@@ -3,9 +3,13 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"poscomp-simulator.com/backend/models/questao"
 )
+
+const tempoMinimoPQuestao int = 3
+const tempoMaximoPQuestao int = 5
 
 type Simulado struct {
 	questao.BatchQuestoes
@@ -63,7 +67,57 @@ func (br *BatchRespostas) UpdateRespostas(db *sql.DB) error {
 }
 
 func (s *Simulado) Create(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	err := db.QueryRow("SELECT id FROM simulado WHERE nome = $1", s.Nome).Scan(&s.ID)
+
+	if err == nil {
+		return errors.New("Simulado de mesmo nome já foi criado.")
+	} else if err != sql.ErrNoRows {
+		return errors.New("Não foi possível criar o simulado.")
+	}
+
+	if !(tempoMinimoPQuestao*s.NumeroQuestoes.Tot <= s.TempoLimite && s.TempoLimite <= tempoMaximoPQuestao*s.NumeroQuestoes.Tot) {
+		return errors.New("Tempo limite fora do intervalo ideal.")
+	}
+
+	numeroMaximoQuestoes := getNumeroMaximoQuestoes(db, s.Anos)
+
+	for _, area := range s.Areas {
+
+		var num int
+
+		switch area {
+		case "Matemática":
+			num = s.NumeroQuestoes.Mat
+		case "Fundamentos da Computação":
+			num = s.NumeroQuestoes.Fun
+		case "Tecnologia da Computação":
+			num = s.NumeroQuestoes.Tec
+		}
+
+		if num > numeroMaximoQuestoes[area] {
+			return errors.New("Número de questões da área " + area + " ultrapassa o limite disponível.")
+		}
+
+	}
+
+	query := `
+	INSERT INTO 
+	simulado(nome, estado, tempo_limite, 
+			 quant_tot, quant_mat, quant_fun, 
+			 quant_tec, tempo_restante, id_usuario)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+
+	if _, err := db.Exec(query, s.Nome, s.Estado, s.TempoLimite,
+		s.NumeroQuestoes.Tot, s.NumeroQuestoes.Mat, s.NumeroQuestoes.Fun,
+		s.NumeroQuestoes.Tec, s.TempoLimite, s.IdUsuario); err != nil {
+		fmt.Println(err)
+		return errors.New("Não foi possível criar o simulado.")
+	}
+
+	return nil
+
 }
 
 func (s *Simulado) Get(db *sql.DB) error {
@@ -72,4 +126,29 @@ func (s *Simulado) Get(db *sql.DB) error {
 
 func (s *Simulado) Delete(db *sql.DB) error {
 	return errors.New("Not implemented")
+}
+
+func getNumeroMaximoQuestoes(db *sql.DB, anos []int) map[string]int {
+
+	qtdQuestoes := map[string]int{}
+	query := "SELECT ano, area, count(id) FROM questao GROUP BY ano, area"
+	rows, _ := db.Query(query)
+
+	for rows.Next() {
+		var (
+			ano  int
+			area string
+			qtd  int
+		)
+
+		rows.Scan(&ano, &area, &qtd)
+		for _, v := range anos {
+			if ano == v {
+				qtdQuestoes[area] += qtd
+				break
+			}
+		}
+	}
+
+	return qtdQuestoes
 }
