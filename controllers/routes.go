@@ -33,7 +33,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/simulado/", a.GetSimulados).Methods("GET")
 	a.Router.HandleFunc("/simulado/", a.CreateSimulado).Methods("POST")
 	a.Router.HandleFunc("/simulado/{id}/", a.GetSimulado).Methods("GET")
-	a.Router.HandleFunc("/simulado/{id}/", a.UpdateStateSimulado).Methods("PUT")
+	a.Router.HandleFunc("/simulado/{id}/{to_state}/", a.UpdateStateSimulado).Methods("PUT")
 	a.Router.HandleFunc("/simulado/{id}/", a.UpdateRespostasSimulado).Methods("PATCH")
 	a.Router.HandleFunc("/simulado/{id}/", a.DeleteSimulado).Methods("DELETE")
 

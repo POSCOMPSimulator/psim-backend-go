@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 
 	"poscomp-simulator.com/backend/models/questao"
 )
@@ -14,17 +15,19 @@ const tempoMaximoPQuestao int = 5
 type Simulado struct {
 	questao.BatchQuestoes
 
-	ID             int            `json:"id,omitempty"`
-	Nome           string         `json:"nome"`
-	Estado         int            `json:"estado"`
-	TempoLimite    int            `json:"tempo_limite,omitempty"`
-	TempoRestante  int            `json:"tempo_restante,omitempty"`
-	IdUsuario      string         `json:"id_usuario,omitempty"`
-	Anos           []int          `json:"anos"`
-	Areas          []string       `json:"areas"`
-	NumeroQuestoes NumeroQuestoes `json:"numero_questoes"`
-	Correcao       Correcao       `json:"correcao,omitempty"`
-	Respostas      []string       `json:"respostas_atuais,omitempty"`
+	ID                int             `json:"id,omitempty"`
+	Nome              string          `json:"nome,omitempty"`
+	Estado            int             `json:"estado,omitempty"`
+	TempoLimite       int             `json:"tempo_limite,omitempty"`
+	TempoRestante     int             `json:"tempo_restante,omitempty"`
+	IdUsuario         string          `json:"id_usuario,omitempty"`
+	Anos              []int           `json:"anos,omitempty"`
+	Areas             []string        `json:"areas,omitempty"`
+	NumeroQuestoes    *NumeroQuestoes `json:"numero_questoes,omitempty"`
+	Correcao          *Correcao       `json:"correcao,omitempty"`
+	Respostas         Respostas       `json:"respostas_atuais,omitempty"`
+	ContinuarSimulado bool            `json:"-"`
+	Finalizar         bool            `json:"-"`
 }
 
 type BatchSimulados struct {
@@ -33,9 +36,9 @@ type BatchSimulados struct {
 }
 
 type BatchRespostas struct {
-	IDSimulado    int        `json:"-"`
-	Respostas     []Resposta `json:"respostas"`
-	TempoRestante int        `json:"tempo_restante"`
+	IDSimulado    int       `json:"-"`
+	Respostas     Respostas `json:"respostas"`
+	TempoRestante int       `json:"tempo_restante"`
 }
 
 type NumeroQuestoes struct {
@@ -45,10 +48,7 @@ type NumeroQuestoes struct {
 	Tec int `json:"tec"`
 }
 
-type Resposta struct {
-	IDQuestao int    `json:"id_questao"`
-	Resp      string `json:"resposta_questao"`
-}
+type Respostas map[int]string
 
 type Correcao struct {
 	DataFinalizacao string         `json:"data_finalizacao"`
@@ -126,8 +126,185 @@ func (s *Simulado) Get(db *sql.DB) error {
 	return errors.New("Not implemented")
 }
 
+func (s *Simulado) Start(db *sql.DB) error {
+
+	if err := s.getEstado(db); err != nil {
+		return err
+	}
+
+	if s.Estado != 0 {
+		return errors.New("Simulado já foi iniciado.")
+	}
+
+	if _, err := db.Exec("UPDATE simulado SET estado = 1 WHERE id = $1", s.ID); err != nil {
+		return errors.New("Não foi possível criar simulado")
+	}
+
+	if err := s.setQuestoes(db); err != nil {
+		return err
+	}
+
+	s.getQuestoes(db)
+	s.getRespostas(db)
+
+	return nil
+}
+
+func (s *Simulado) Continue(db *sql.DB) error {
+
+	if err := s.getEstado(db); err != nil {
+		return err
+	}
+
+	if s.Estado != 1 {
+		return errors.New("Simulado não foi iniciado ou está finalizado.")
+	}
+
+	s.getQuestoes(db)
+	s.getRespostas(db)
+
+	return nil
+}
+
+func (s *Simulado) Finish(db *sql.DB) error {
+
+	if err := s.getEstado(db); err != nil {
+		return err
+	}
+
+	if s.Estado != 1 {
+		return errors.New("Simulado não foi iniciado ou está finalizado.")
+	}
+
+	if _, err := db.Exec("UPDATE simulado SET estado = 2 WHERE id = $1", s.ID); err != nil {
+		return errors.New("Não foi possível criar simulado")
+	}
+
+	return nil
+
+}
+
 func (s *Simulado) Delete(db *sql.DB) error {
 	return errors.New("Not implemented")
+}
+
+func (s *Simulado) getEstado(db *sql.DB) error {
+
+	s.NumeroQuestoes = &NumeroQuestoes{}
+	var user string
+
+	if err := db.QueryRow("SELECT id_usuario, estado, tempo_restante FROM simulado WHERE id = $1", s.ID).
+		Scan(&user, &s.Estado, &s.TempoRestante); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("Simulado não encontrado.")
+		}
+		return errors.New("Não foi recuperar o estado do simulado")
+	}
+
+	if user != s.IdUsuario {
+		return errors.New("Simulado não pertence ao usuário.")
+	}
+
+	return nil
+
+}
+
+func (s *Simulado) setQuestoes(db *sql.DB) error {
+
+	var (
+		qmat int
+		qfun int
+		qtec int
+	)
+
+	if err := db.QueryRow("SELECT quant_mat, quant_fun, quant_tec FROM simulado WHERE id = $1", s.ID).Scan(&qmat, &qfun, &qtec); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("Simulado não encontrado.")
+		}
+		return errors.New("Não foi recuperar o estado do simulado")
+	}
+
+	queryString := `
+	SELECT id FROM(
+	(SELECT id, numero, ano FROM questao
+	WHERE area = 'Matemática'
+	ORDER BY RANDOM()
+	LIMIT $1)
+	UNION
+	(SELECT id, numero, ano FROM questao
+	WHERE area = 'Fundamentos da Computação'
+	ORDER BY RANDOM()
+	LIMIT $2)
+	UNION
+	(SELECT id, numero, ano FROM questao
+	WHERE area = 'Tecnologia da Computação'
+	ORDER BY RANDOM()
+	LIMIT $3)
+	ORDER BY numero, ano) AS qsimulado
+	`
+
+	rows, err := db.Query(queryString, qmat, qfun, qtec)
+	stmt, err2 := db.Prepare("INSERT INTO questoes_simulado(id_simulado, id_usuario, id_questao) VALUES ($1, $2, $3)")
+	defer stmt.Close()
+
+	if err != nil || err2 != nil {
+		return errors.New("Não foi possível selecionar as questões.")
+	}
+
+	for rows.Next() {
+		var idq int
+		rows.Scan(&idq)
+		stmt.Exec(s.ID, s.IdUsuario, idq)
+	}
+
+	return nil
+
+}
+
+func (s *Simulado) getQuestoes(db *sql.DB) error {
+
+	s.Questoes = []questao.Questao{}
+
+	query := `
+	SELECT questao.*
+	FROM questoes_simulado
+	LEFT JOIN questao ON questao.id = questoes_simulado.id_questao
+	WHERE id_simulado = $1`
+	args := []interface{}{s.ID}
+
+	s.SelectQuestoes(db, query, args)
+
+	sort.Slice(s.Questoes, func(i, j int) bool {
+		if s.Questoes[i].Numero < s.Questoes[j].Numero {
+			return true
+		} else if s.Questoes[i].Numero == s.Questoes[j].Numero {
+			if s.Questoes[i].Ano < s.Questoes[j].Ano {
+				return true
+			}
+		}
+		return false
+	})
+
+	return nil
+
+}
+
+func (s *Simulado) getRespostas(db *sql.DB) error {
+
+	s.Respostas = map[int]string{}
+	rows, err := db.Query("SELECT id_questao, resposta FROM questoes_simulado WHERE id_simulado = $1", s.ID)
+	if err != nil {
+		return errors.New("Não foi possível obter as respostas.")
+	}
+
+	for rows.Next() {
+		var id int
+		var resp string
+		rows.Scan(&id, &resp)
+		s.Respostas[id] = resp
+	}
+
+	return nil
 }
 
 func getNumeroMaximoQuestoes(db *sql.DB, anos []int) map[string]int {
