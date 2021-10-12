@@ -174,7 +174,11 @@ func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = sim.Finish(a.DB)
+		if err = sim.Finish(a.DB); err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		w.WriteHeader(http.StatusMovedPermanently)
 
 	default:

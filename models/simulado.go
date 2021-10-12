@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"poscomp-simulator.com/backend/models/questao"
 )
@@ -186,6 +187,14 @@ func (s *Simulado) Get(db *sql.DB) error {
 		return errors.New("Não foi possível obter o simulado.")
 	}
 
+	if err := s.getQuestoes(db); err != nil {
+		return err
+	}
+
+	if err := s.getRespostas(db); err != nil {
+		return err
+	}
+
 	if err := s.getCorrecao(db); err != nil {
 		return err
 	}
@@ -241,6 +250,10 @@ func (s *Simulado) Finish(db *sql.DB) error {
 
 	if s.Estado != 1 {
 		return errors.New("Simulado não foi iniciado ou está finalizado.")
+	}
+
+	if err := s.correct(db); err != nil {
+		return errors.New("Simulado não foi possível corrigir o simulado.")
 	}
 
 	if _, err := db.Exec("UPDATE simulado SET estado = 2 WHERE id = $1", s.ID); err != nil {
@@ -379,13 +392,114 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 		err := rows.Scan(&id, &resp)
 		s.Respostas[id] = resp
 
-		if err.Error() == `sql: Scan error on column index 1, name "resposta": converting NULL to int is unsupported` {
+		if err != nil && err.Error() == `sql: Scan error on column index 1, name "resposta": converting NULL to int is unsupported` {
 			s.Respostas[id] = -1
 		}
 
 	}
 
 	return nil
+}
+
+func (s *Simulado) correct(db *sql.DB) error {
+
+	query := `
+	SELECT area, (resposta IS NOT NULL AND resposta = gabarito) as correta, resposta IS NULL as branca
+	FROM questoes_simulado
+	LEFT JOIN questao ON questao.id = questoes_simulado.id_questao
+	WHERE id_simulado = $1
+	`
+
+	s.Correcao = &Correcao{}
+	rows, err := db.Query(query, s.ID)
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+
+		var (
+			area    string
+			branca  bool
+			correta bool
+			estado  *NumeroQuestoes
+		)
+
+		rows.Scan(&area, &correta, &branca)
+
+		if branca {
+			estado = &s.Correcao.Brancos
+		} else if correta {
+			estado = &s.Correcao.Acertos
+		} else {
+			estado = &s.Correcao.Erros
+		}
+
+		estado.Tot += 1
+
+		switch area {
+		case "Matemática":
+			estado.Mat += 1
+		case "Fundamentos da Computação":
+			estado.Fun += 1
+		case "Tecnologia da Computação":
+			estado.Tec += 1
+		}
+
+	}
+
+	query = `
+	INSERT 
+	INTO correcao(b_total, b_mat, b_fund, b_tec,
+				  a_total, a_mat, a_fund, a_tec,
+				  e_total, e_mat, e_fund, e_tec,
+				  data_finalizacao, id_usuario, id_simulado)
+	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+		   $11, $12, $13, $14, $15) 
+	`
+
+	loc, _ := time.LoadLocation("America/Sao_Paulo")
+	tim := time.Now().In(loc)
+	s.Correcao.DataFinalizacao = tim.Format(time.RFC3339)
+
+	fmt.Println(s.Correcao)
+
+	if _, err := db.Exec(query,
+		s.Correcao.Brancos.Tot, s.Correcao.Brancos.Mat, s.Correcao.Brancos.Fun, s.Correcao.Brancos.Tec,
+		s.Correcao.Acertos.Tot, s.Correcao.Acertos.Mat, s.Correcao.Acertos.Fun, s.Correcao.Acertos.Tec,
+		s.Correcao.Erros.Tot, s.Correcao.Erros.Mat, s.Correcao.Erros.Fun, s.Correcao.Erros.Tec,
+		s.Correcao.DataFinalizacao, s.IdUsuario, s.ID); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Simulado) getCorrecao(db *sql.DB) error {
+
+	s.Correcao = &Correcao{}
+
+	query := `
+	SELECT b_total, b_mat, b_fund, b_tec,
+		   a_total, a_mat, a_fund, a_tec,
+		   e_total, e_mat, e_fund, e_tec,
+		   data_finalizacao
+	FROM correcao WHERE id_simulado = $1
+	`
+
+	if err := db.QueryRow(query, s.ID).
+		Scan(&s.Correcao.Brancos.Tot, &s.Correcao.Brancos.Mat, &s.Correcao.Brancos.Fun, &s.Correcao.Brancos.Tec,
+			&s.Correcao.Acertos.Tot, &s.Correcao.Acertos.Mat, &s.Correcao.Acertos.Fun, &s.Correcao.Acertos.Tec,
+			&s.Correcao.Erros.Tot, &s.Correcao.Erros.Mat, &s.Correcao.Erros.Fun, &s.Correcao.Erros.Tec,
+			&s.Correcao.DataFinalizacao); err != nil {
+		return errors.New("Não foi possível obter a correção")
+	}
+
+	s.Correcao.TempoRealizacao = s.TempoLimite - s.TempoRestante
+
+	return nil
+
 }
 
 func getNumeroMaximoQuestoes(db *sql.DB, anos []int) map[string]int {
@@ -411,22 +525,4 @@ func getNumeroMaximoQuestoes(db *sql.DB, anos []int) map[string]int {
 	}
 
 	return qtdQuestoes
-}
-
-func (s *Simulado) getCorrecao(db *sql.DB) error {
-
-	s.Correcao = &Correcao{}
-
-	if err := db.QueryRow("SELECT * FROM correcao WHERE id_simulado = $1", s.ID).
-		Scan(&s.Correcao.Brancos.Tot, &s.Correcao.Brancos.Mat, &s.Correcao.Brancos.Fun, &s.Correcao.Brancos.Tec,
-			&s.Correcao.Acertos.Tot, &s.Correcao.Acertos.Mat, &s.Correcao.Acertos.Fun, &s.Correcao.Acertos.Tec,
-			&s.Correcao.Erros.Tot, &s.Correcao.Erros.Mat, &s.Correcao.Erros.Fun, &s.Correcao.Erros.Tec,
-			&s.Correcao.DataFinalizacao); err != nil {
-		return errors.New("Não foi possível obter a correção")
-	}
-
-	s.Correcao.TempoRealizacao = s.TempoLimite - s.TempoRestante
-
-	return nil
-
 }
