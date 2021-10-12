@@ -68,6 +68,8 @@ func (br *BatchRespostas) UpdateRespostas(db *sql.DB) error {
 
 func (s *Simulado) Create(db *sql.DB) error {
 
+	s.NumeroQuestoes.Tot = s.NumeroQuestoes.Mat + s.NumeroQuestoes.Fun + s.NumeroQuestoes.Tec
+
 	err := db.QueryRow("SELECT id FROM simulado WHERE nome = $1", s.Nome).Scan(&s.ID)
 
 	if err == nil {
