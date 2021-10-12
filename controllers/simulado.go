@@ -56,7 +56,37 @@ func (a *App) CreateSimulado(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *App) GetSimulado(w http.ResponseWriter, r *http.Request) {}
+func (a *App) GetSimulado(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
+	if !ok {
+		return
+	}
+
+	var err error
+	var sim models.Simulado
+	sim.IdUsuario = user.Email
+
+	vars := mux.Vars(r)
+	if id, ok := vars["id"]; ok {
+		sim.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
+	}
+
+	if err := sim.Get(a.DB); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, sim)
+
+}
 
 func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 

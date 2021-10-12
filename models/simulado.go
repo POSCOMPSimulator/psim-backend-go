@@ -152,7 +152,26 @@ func (s *Simulado) Create(db *sql.DB) error {
 }
 
 func (s *Simulado) Get(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	if err := s.getEstado(db); err != nil {
+		return err
+	}
+
+	if s.Estado != 2 {
+		return errors.New("Simulado não foi finalizado.")
+	}
+
+	if err := db.QueryRow("SELECT * FROM simulado WHERE id = $1", s.ID).Scan(&s.ID, &s.Nome, &s.Estado, &s.TempoLimite,
+		&s.NumeroQuestoes.Tot, &s.NumeroQuestoes.Mat, &s.NumeroQuestoes.Fun,
+		&s.NumeroQuestoes.Tec, &s.TempoRestante, &s.IdUsuario); err != nil {
+		return errors.New("Não foi possível obter o simulado.")
+	}
+
+	if err := s.getCorrecao(db); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Simulado) Start(db *sql.DB) error {
