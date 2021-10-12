@@ -177,7 +177,7 @@ func (s *Simulado) Finish(db *sql.DB) error {
 	}
 
 	if _, err := db.Exec("UPDATE simulado SET estado = 2 WHERE id = $1", s.ID); err != nil {
-		return errors.New("Não foi possível criar simulado")
+		return errors.New("Não foi possível finalizar o simulado.")
 	}
 
 	return nil
@@ -185,7 +185,16 @@ func (s *Simulado) Finish(db *sql.DB) error {
 }
 
 func (s *Simulado) Delete(db *sql.DB) error {
-	return errors.New("Not implemented")
+
+	if err := s.getEstado(db); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("DELETE FROM simulado WHERE id = $1 AND id_usuario = $2", s.ID, s.IdUsuario); err != nil {
+		return errors.New("Não foi possível apagar o simulado.")
+	}
+
+	return nil
 }
 
 func (s *Simulado) getEstado(db *sql.DB) error {

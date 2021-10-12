@@ -139,4 +139,30 @@ func (a *App) UpdateStateSimulado(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) UpdateRespostasSimulado(w http.ResponseWriter, r *http.Request) {}
 
-func (a *App) DeleteSimulado(w http.ResponseWriter, r *http.Request) {}
+func (a *App) DeleteSimulado(w http.ResponseWriter, r *http.Request) {
+
+	ok, user := utils.AuthUser(a.DB, w, r, 0)
+	if !ok {
+		return
+	}
+
+	var err error
+	var sim models.Simulado
+	sim.IdUsuario = user.Email
+
+	vars := mux.Vars(r)
+	if id, ok := vars["id"]; ok {
+		sim.ID, err = strconv.Atoi(id)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
+	}
+
+	sim.Delete(a.DB)
+	w.WriteHeader(http.StatusOK)
+
+}
