@@ -8,7 +8,7 @@ import (
 )
 
 type BatchQuestoes struct {
-	Questoes []Questao       `json:"questoes,omitempty"`
+	Questoes []Questao       `json:"questoes"`
 	Filtros  SumarioQuestoes `json:"-"`
 }
 
