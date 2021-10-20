@@ -11,4 +11,4 @@ release:
     - ./migrate.sh
 
 run:
-  web: ./app
+  web: ./psim
