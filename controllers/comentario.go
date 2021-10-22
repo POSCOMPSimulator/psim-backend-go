@@ -167,6 +167,7 @@ func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Get(a.DB); err != nil {
