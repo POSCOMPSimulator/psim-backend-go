@@ -141,6 +141,7 @@ func (a *App) CleanComentario(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Clean(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
