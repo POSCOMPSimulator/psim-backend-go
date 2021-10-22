@@ -176,6 +176,7 @@ func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		utils.RespondWithError(w, http.StatusBadRequest, "Não foi possível apagar o comentário.")
+		return
 	}
 
 	if user.Email == c.AutorID || user.NivelAcesso > 0 {
