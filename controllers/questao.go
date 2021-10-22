@@ -68,9 +68,11 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 		errosq.ID, err = strconv.Atoi(value)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	errosq.Get(a.DB)
