@@ -46,6 +46,7 @@ func (a *App) GetComentariosQuestao(w http.ResponseWriter, r *http.Request) {
 
 	if err := bc.GetComentariosQuestao(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, bc)
