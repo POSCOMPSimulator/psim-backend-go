@@ -23,6 +23,7 @@ func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				utils.RespondWithError(w, http.StatusBadRequest, "Campo anos mal formatado")
+				return
 			}
 
 			batch.Filtros.Anos[e] = i
