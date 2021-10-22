@@ -74,6 +74,7 @@ func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
