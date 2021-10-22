@@ -107,6 +107,7 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Report(a.DB); err != nil {
