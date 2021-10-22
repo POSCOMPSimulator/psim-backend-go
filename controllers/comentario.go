@@ -112,6 +112,7 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 
 	if err := c.Report(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
