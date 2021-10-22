@@ -3,10 +3,12 @@ package models
 import (
 	"database/sql"
 	"errors"
+
+	"poscomp-simulator.com/backend/models/questao"
 )
 
 type Simulado struct {
-	BatchQuestoes
+	questao.BatchQuestoes
 
 	ID             int            `json:"id,omitempty"`
 	Nome           string         `json:"nome"`
