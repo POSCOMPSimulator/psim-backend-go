@@ -138,6 +138,7 @@ func (a *App) CleanComentario(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Clean(a.DB); err != nil {
