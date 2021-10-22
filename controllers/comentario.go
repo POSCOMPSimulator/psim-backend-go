@@ -173,6 +173,7 @@ func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
 	if err := c.Get(a.DB); err != nil {
 		if err == sql.ErrNoRows {
 			utils.RespondWithError(w, http.StatusNotFound, "Comentário não foi encontrado.")
+			return
 		}
 		utils.RespondWithError(w, http.StatusBadRequest, "Não foi possível apagar o comentário.")
 	}
