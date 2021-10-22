@@ -103,6 +103,7 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 		c.ID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
