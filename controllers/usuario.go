@@ -77,7 +77,7 @@ func (a *App) PromoteUsuario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.NivelAcesso < 1 || user.NivelAcesso < int16(next_level) {
+	if user.NivelAcesso <= int16(next_level) {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a promoção de conta.")
 		return
 	}

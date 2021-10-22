@@ -23,6 +23,7 @@ func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				utils.RespondWithError(w, http.StatusBadRequest, "Campo anos mal formatado")
+				return
 			}
 
 			batch.Filtros.Anos[e] = i
@@ -67,9 +68,11 @@ func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
 		errosq.ID, err = strconv.Atoi(value)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	errosq.Get(a.DB)
@@ -90,9 +93,11 @@ func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
 		errosq.ID, err = strconv.Atoi(value)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -181,9 +186,11 @@ func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
 		q.ID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	q.Delete(a.DB)
