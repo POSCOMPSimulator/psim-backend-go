@@ -41,6 +41,7 @@ func (a *App) GetComentariosQuestao(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := bc.GetComentariosQuestao(a.DB); err != nil {
