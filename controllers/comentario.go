@@ -20,6 +20,7 @@ func (a *App) GetComentariosSinalizados(w http.ResponseWriter, r *http.Request) 
 	var bc models.BatchComentarios
 	if err := bc.GetComentariosSinalizados(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, bc)
@@ -36,13 +37,16 @@ func (a *App) GetComentariosQuestao(w http.ResponseWriter, r *http.Request) {
 		bc.QuestaoID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := bc.GetComentariosQuestao(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, bc)
@@ -66,9 +70,11 @@ func (a *App) PostComentarioQuestao(w http.ResponseWriter, r *http.Request) {
 		c.QuestaoID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -97,13 +103,16 @@ func (a *App) ReportComentario(w http.ResponseWriter, r *http.Request) {
 		c.ID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Report(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -125,13 +134,16 @@ func (a *App) CleanComentario(w http.ResponseWriter, r *http.Request) {
 		c.ID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Clean(a.DB); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -153,16 +165,20 @@ func (a *App) DeleteComentario(w http.ResponseWriter, r *http.Request) {
 		c.ID, err = strconv.Atoi(id)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+			return
 		}
 	} else {
 		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+		return
 	}
 
 	if err := c.Get(a.DB); err != nil {
 		if err == sql.ErrNoRows {
 			utils.RespondWithError(w, http.StatusNotFound, "Comentário não foi encontrado.")
+			return
 		}
 		utils.RespondWithError(w, http.StatusBadRequest, "Não foi possível apagar o comentário.")
+		return
 	}
 
 	if user.Email == c.AutorID || user.NivelAcesso > 0 {
