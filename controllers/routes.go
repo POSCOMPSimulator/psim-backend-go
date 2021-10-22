@@ -38,10 +38,11 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/simulado/{id}/", a.DeleteSimulado).Methods("DELETE")
 
 	// Rotas de comentários
-	a.Router.HandleFunc("/comment/", a.GetComentariosSinalizados).Methods("GET")
-	a.Router.HandleFunc("/comment/questao/{id}/", a.GetComentariosQuestao).Methods("GET")
-	a.Router.HandleFunc("/comment/questao/{id}/", a.PostComentarioQuestao).Methods("POST")
-	a.Router.HandleFunc("/comment/{cid}/", a.ReportComentario).Methods("PUT")
-	a.Router.HandleFunc("/comment/{cid}/", a.DeleteComentario).Methods("DELETE")
+	a.Router.HandleFunc("/comentario/", a.GetComentariosSinalizados).Methods("GET")
+	a.Router.HandleFunc("/comentario/questao/{id}/", a.GetComentariosQuestao).Methods("GET")
+	a.Router.HandleFunc("/comentario/questao/{id}/", a.PostComentarioQuestao).Methods("POST")
+	a.Router.HandleFunc("/comentario/{id}/", a.ReportComentario).Methods("PUT")
+	a.Router.HandleFunc("/comentario/{id}/", a.DeleteComentario).Methods("DELETE")
+	a.Router.HandleFunc("/comentario/{id}/reports/", a.CleanComentario).Methods("DELETE")
 
 }
