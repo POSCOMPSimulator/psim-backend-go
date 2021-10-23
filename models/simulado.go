@@ -460,7 +460,6 @@ func (s *Simulado) correct(db *sql.DB) error {
 	tim := time.Now().In(loc)
 	s.Correcao.DataFinalizacao = tim.Format(time.RFC3339)
 
-	fmt.Println(s.Correcao)
 
 	if _, err := db.Exec(query,
 		s.Correcao.Brancos.Tot, s.Correcao.Brancos.Mat, s.Correcao.Brancos.Fun, s.Correcao.Brancos.Tec,
