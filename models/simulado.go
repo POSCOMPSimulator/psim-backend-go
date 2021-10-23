@@ -466,7 +466,6 @@ func (s *Simulado) correct(db *sql.DB) error {
 		s.Correcao.Acertos.Tot, s.Correcao.Acertos.Mat, s.Correcao.Acertos.Fun, s.Correcao.Acertos.Tec,
 		s.Correcao.Erros.Tot, s.Correcao.Erros.Mat, s.Correcao.Erros.Fun, s.Correcao.Erros.Tec,
 		s.Correcao.DataFinalizacao, s.IdUsuario, s.ID); err != nil {
-		fmt.Println(err)
 		return err
 	}
 
