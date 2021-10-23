@@ -163,7 +163,6 @@ func (s *Simulado) Create(db *sql.DB) error {
 	if _, err := db.Exec(query, s.Nome, s.Estado, s.TempoLimite,
 		s.NumeroQuestoes.Tot, s.NumeroQuestoes.Mat, s.NumeroQuestoes.Fun,
 		s.NumeroQuestoes.Tec, s.TempoLimite, s.IdUsuario); err != nil {
-		fmt.Println(err)
 		return errors.New("Não foi possível criar o simulado.")
 	}
 
