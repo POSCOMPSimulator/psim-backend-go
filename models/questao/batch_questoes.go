@@ -15,11 +15,30 @@ type BatchQuestoes struct {
 func (bq *BatchQuestoes) Get(db *sql.DB) error {
 
 	bq.Questoes = []Questao{}
+
+	queryString, args := bq.mountFilterQuery()
+	bq.SelectQuestoes(db, queryString, args)
+
+	sort.Slice(bq.Questoes, func(i, j int) bool {
+		if bq.Questoes[i].Ano < bq.Questoes[j].Ano {
+			return true
+		} else if bq.Questoes[i].Ano == bq.Questoes[j].Ano {
+			if bq.Questoes[i].Numero < bq.Questoes[j].Numero {
+				return true
+			}
+		}
+		return false
+	})
+
+	return nil
+}
+
+func (bq *BatchQuestoes) SelectQuestoes(db *sql.DB, query string, args []interface{}) error {
+
 	ids := []interface{}{}
 	map_id_questao := map[int]Questao{}
 
-	queryString, args := bq.mountFilterQuery()
-	rows, err := db.Query(queryString, args...)
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return err
 	}
@@ -114,21 +133,10 @@ func (bq *BatchQuestoes) Get(db *sql.DB) error {
 		for _, q := range map_id_questao {
 			bq.Questoes = append(bq.Questoes, q)
 		}
-
-		sort.Slice(bq.Questoes, func(i, j int) bool {
-			if bq.Questoes[i].Ano < bq.Questoes[j].Ano {
-				return true
-			} else if bq.Questoes[i].Ano == bq.Questoes[j].Ano {
-				if bq.Questoes[i].Numero < bq.Questoes[j].Numero {
-					return true
-				}
-			}
-			return false
-		})
-
 	}
 
 	return nil
+
 }
 
 func (bq *BatchQuestoes) mountFilterQuery() (string, []interface{}) {
