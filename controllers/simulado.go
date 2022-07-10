@@ -39,6 +39,7 @@ func (a *App) CreateSimulado(w http.ResponseWriter, r *http.Request) {
 
 	var sim models.Simulado
 	sim.IdUsuario = user.Email
+	sim.Estado = 0
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&sim); err != nil {
