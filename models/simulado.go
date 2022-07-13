@@ -43,7 +43,7 @@ type BatchRespostas struct {
 }
 
 type NumeroQuestoes struct {
-	Tot int `json:"tot,omitempty"`
+	Tot int `json:"tot"`
 	Mat int `json:"mat"`
 	Fun int `json:"fun"`
 	Tec int `json:"tec"`
