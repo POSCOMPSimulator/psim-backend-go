@@ -6,9 +6,9 @@ COPY . /build
 WORKDIR /build
 
 FROM alpine
+RUN apk --no-cache add tzdata
 RUN adduser -S -D -H -h /app appuser
 USER appuser
-RUN apk --no-cache add tzdata
 COPY --from=builder /build/psim /app/
 WORKDIR /app
 CMD ["./psim"]
