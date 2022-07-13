@@ -18,8 +18,8 @@ type Simulado struct {
 	ID                int             `json:"id,omitempty"`
 	Nome              string          `json:"nome,omitempty"`
 	Estado            int             `json:"estado"`
-	TempoLimite       int             `json:"tempo_limite,omitempty"`
-	TempoRestante     int             `json:"tempo_restante,omitempty"`
+	TempoLimite       int             `json:"tempo_limite"`
+	TempoRestante     int             `json:"tempo_restante"`
 	IdUsuario         string          `json:"id_usuario,omitempty"`
 	Anos              []int           `json:"anos,omitempty"`
 	Areas             []string        `json:"areas,omitempty"`
