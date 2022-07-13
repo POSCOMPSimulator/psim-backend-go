@@ -9,8 +9,8 @@ import (
 	"poscomp-simulator.com/backend/models/questao"
 )
 
-const tempoMinimoPQuestao int = 3
-const tempoMaximoPQuestao int = 5
+const tempoMinimoPQuestao int = 180
+const tempoMaximoPQuestao int = 300
 
 type Simulado struct {
 	questao.BatchQuestoes
