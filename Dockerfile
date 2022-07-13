@@ -4,6 +4,7 @@ RUN go get -u github.com/pressly/goose/cmd/goose
 RUN mkdir /build
 COPY . /build
 WORKDIR /build
+RUN go build -o psim
 
 FROM alpine
 RUN apk --no-cache add tzdata
