@@ -206,8 +206,12 @@ func (s *Simulado) Start(db *sql.DB) error {
 		return err
 	}
 
+	if s.Estado == 1 {
+		return s.Continue(db)
+	}
+	
 	if s.Estado != 0 {
-		return errors.New("Simulado já foi iniciado.")
+		return errors.New("Simulado já foi finalizado.")
 	}
 
 	if _, err := db.Exec("UPDATE simulado SET estado = 1 WHERE id = $1", s.ID); err != nil {
