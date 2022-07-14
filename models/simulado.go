@@ -118,7 +118,7 @@ func (s *Simulado) Create(db *sql.DB) error {
 
 	s.NumeroQuestoes.Tot = s.NumeroQuestoes.Mat + s.NumeroQuestoes.Fun + s.NumeroQuestoes.Tec
 
-	err := db.QueryRow("SELECT id FROM simulado WHERE nome = $1", s.Nome).Scan(&s.ID)
+	err := db.QueryRow("SELECT id FROM simulado WHERE nome = $1 AND id_usuario = $2", s.Nome, s.IdUsuario).Scan(&s.ID)
 
 	if err == nil {
 		return errors.New("Simulado de mesmo nome já foi criado.")
