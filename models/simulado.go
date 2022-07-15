@@ -406,7 +406,7 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 func (s *Simulado) correct(db *sql.DB) error {
 
 	query := `
-	SELECT area, (resposta IS NOT NULL AND resposta = gabarito) as correta, resposta IS NULL as branca
+	SELECT area, (resposta = gabarito) as correta, (resposta = -1) as branca
 	FROM questoes_simulado
 	LEFT JOIN questao ON questao.id = questoes_simulado.id_questao
 	WHERE id_simulado = $1
