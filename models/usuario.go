@@ -124,7 +124,7 @@ func (u *Usuario) getQuestoesRealizadas(db *sql.DB) error {
 		u.Estatisticas.PorcentagemQuestoesFeitas.Fun +
 		u.Estatisticas.PorcentagemQuestoesFeitas.Tec
 
-	rows, err = db.Query("SELECT count(id) FROM questao GROUP BY area")
+	rows, err = db.Query("SELECT count(id), area FROM questao GROUP BY area")
 	for rows.Next() {
 		rows.Scan(&count, &area)
 		total += count
