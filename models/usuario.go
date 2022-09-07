@@ -81,7 +81,7 @@ func (u *Usuario) Delete(db *sql.DB) error {
 
 func (u *Usuario) getQuestoesRealizadas(db *sql.DB) error {
 	const queryQuestoesFeitas = `
-	SELECT count(distinct(id_questao)) 
+	SELECT count(distinct(id_questao)), area 
 	FROM (
 		SELECT id_questao, resposta, gabarito, area 
 		FROM (
