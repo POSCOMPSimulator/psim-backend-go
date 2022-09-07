@@ -81,7 +81,7 @@ func (u *Usuario) Delete(db *sql.DB) error {
 
 func (u *Usuario) getQuestoesRealizadas(db *sql.DB) error {
 	const queryQuestoesFeitas = `
-	SELECT count(distinct(id_questao)) 
+	SELECT count(distinct(id_questao)), area 
 	FROM (
 		SELECT id_questao, resposta, gabarito, area 
 		FROM (
@@ -124,7 +124,7 @@ func (u *Usuario) getQuestoesRealizadas(db *sql.DB) error {
 		u.Estatisticas.PorcentagemQuestoesFeitas.Fun +
 		u.Estatisticas.PorcentagemQuestoesFeitas.Tec
 
-	rows, err = db.Query("SELECT count(id) FROM questao GROUP BY area")
+	rows, err = db.Query("SELECT count(id), area FROM questao GROUP BY area")
 	for rows.Next() {
 		rows.Scan(&count, &area)
 		total += count
