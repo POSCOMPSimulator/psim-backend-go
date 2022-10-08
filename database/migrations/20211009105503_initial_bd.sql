@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS usuario (
  email text NOT NULL,
  nome text NOT NULL,
- foto_perfil text NOT NULL,
+ senha text NOT NULL,
  nivel_acesso smallint NOT NULL DEFAULT 0,
  PRIMARY KEY (email)
 );
