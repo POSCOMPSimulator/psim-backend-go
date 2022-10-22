@@ -10,9 +10,10 @@ type Usuario struct {
 	Email        string           `json:"email,omitempty"`
 	NivelAcesso  int16            `json:"nivel_acesso"`
 	Nome         string           `json:"nome"`
-	Senha        string           `json:"senha"`
+	Senha        string           `json:"senha,omitempty"`
 	Estatisticas EstaticasUsuario `json:"estatisticas,omitempty"`
 	Completo     bool             `json:"-"`
+	TokenAcesso  string           `json:"access_token,omitempty"`
 }
 
 type EstaticasUsuario struct {
@@ -43,7 +44,7 @@ func (u *Usuario) Create(db *sql.DB) error {
 }
 
 func (u *Usuario) Get(db *sql.DB) error {
-	if err := db.QueryRow("SELECT email, nome, nivel_acesso FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.NivelAcesso); err != nil {
+	if err := db.QueryRow("SELECT email, nome, senha, nivel_acesso FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.Senha, &u.NivelAcesso); err != nil {
 		if err == sql.ErrNoRows {
 			return errors.New("Usuário não encontrado.")
 		}

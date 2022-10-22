@@ -15,9 +15,10 @@ func (a *App) initializeRoutes() {
 
 	// Rotas de usuário
 	a.Router.HandleFunc("/usuario/", a.GetUsuario).Methods("GET")
-	a.Router.HandleFunc("/usuario/", a.CreateOrLoginUsuario).Methods("POST")
+	a.Router.HandleFunc("/usuario/", a.CreateUsuario).Methods("POST")
 	a.Router.HandleFunc("/usuario/", a.PromoteUsuario).Methods("PUT")
 	a.Router.HandleFunc("/usuario/", a.DeleteUsuario).Methods("DELETE")
+	a.Router.HandleFunc("/usuario/login/", a.LoginUsuario).Methods("POST")
 
 	// Rotas de questão
 	a.Router.HandleFunc("/questao/", a.GetQuestoes).Methods("GET")
