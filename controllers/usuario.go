@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"os"
@@ -109,6 +110,75 @@ func (a *App) LoginUsuario(ctx *gin.Context) {
 		AccessTokenExpiresAt:  access_payload.ExperiesAt,
 		RefreshToken:          refresh_token,
 		RefreshTokenExpiresAt: refresh_payload.ExperiesAt,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+	return
+
+}
+
+func (a *App) RenewTokenUsuario(ctx *gin.Context) {
+
+	type renewTokenRequest struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	type renewTokenResponse struct {
+		AccessToken          string    `json:"access_token"`
+		AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+	}
+
+	req := renewTokenRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
+
+	refresh_payload, err := a.tokenMaker.VerifyToken(req.RefreshToken)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(err))
+		return
+	}
+
+	session := &models.Session{
+		ID: refresh_payload.ID,
+	}
+
+	if err := session.GetSession(a.DB); err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, utils.RespondWithError(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, utils.RespondWithError(err))
+		return
+	}
+
+	if session.IsBlocked {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("blocked session")))
+		return
+	}
+
+	if session.Username != refresh_payload.UserID {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("incorrect session user")))
+		return
+	}
+
+	if session.RefreshToken != req.RefreshToken {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("mismatched session token")))
+		return
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("expired session")))
+		return
+	}
+
+	tokenDuration, _ := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
+	access_token, access_payload, _ := a.tokenMaker.CreateToken(refresh_payload.UserID, refresh_payload.UserLevel, tokenDuration)
+
+	res := renewTokenResponse{
+		AccessToken:          access_token,
+		AccessTokenExpiresAt: access_payload.ExperiesAt,
 	}
 
 	ctx.JSON(http.StatusOK, res)

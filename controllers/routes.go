@@ -22,6 +22,7 @@ func (a *App) initializeRoutes() {
 	// Rotas de usuário
 	public.POST("/usuario/", a.CreateUsuario)
 	public.POST("/usuario/login/", a.LoginUsuario)
+	public.POST("/usuario/refresh", a.RenewTokenUsuario)
 	authorized.GET("/usuario/", a.GetUsuario)
 	authorized.DELETE("/usuario/", a.DeleteUsuario)
 	moderator.PUT("/usuario/", a.PromoteUsuario)
