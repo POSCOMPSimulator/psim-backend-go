@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
@@ -51,6 +52,15 @@ func (a *App) LoginUsuario(ctx *gin.Context) {
 		Password string `json:"senha" binding:"required,len=8"`
 	}
 
+	type loginUserResponse struct {
+		User                  *models.Usuario `json:"user"`
+		SessionID             uuid.UUID       `json:"session_id"`
+		AccessToken           string          `json:"access_token"`
+		AccessTokenExpiresAt  time.Time       `json:"access_token_expires_at"`
+		RefreshToken          string          `json:"refresh_token"`
+		RefreshTokenExpiresAt time.Time       `json:"refresh_token_expires_at"`
+	}
+
 	req := loginUserRequest{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
@@ -72,10 +82,36 @@ func (a *App) LoginUsuario(ctx *gin.Context) {
 	}
 
 	tokenDuration, _ := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
-	access_token, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, tokenDuration)
-	user.TokenAcesso = access_token
+	access_token, access_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, tokenDuration)
 
-	ctx.JSON(http.StatusOK, user)
+	refreshTokenDuration, _ := time.ParseDuration(os.Getenv("REFRESH_TOKEN_DURATION"))
+	refresh_token, refresh_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, refreshTokenDuration)
+
+	session := &models.Session{
+		ID:           refresh_payload.ID,
+		Username:     user.Email,
+		RefreshToken: refresh_token,
+		UserAgent:    ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refresh_payload.ExperiesAt,
+	}
+
+	if err := session.CreateSession(a.DB); err != nil {
+		ctx.JSON(http.StatusInternalServerError, utils.RespondWithError(err))
+		return
+	}
+
+	res := loginUserResponse{
+		User:                  user,
+		SessionID:             session.ID,
+		AccessToken:           access_token,
+		AccessTokenExpiresAt:  access_payload.ExperiesAt,
+		RefreshToken:          refresh_token,
+		RefreshTokenExpiresAt: refresh_payload.ExperiesAt,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 	return
 
 }

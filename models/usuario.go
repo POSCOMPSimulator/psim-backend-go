@@ -15,7 +15,6 @@ type Usuario struct {
 	Senha        string           `json:"-"`
 	Estatisticas EstaticasUsuario `json:"estatisticas,omitempty"`
 	Completo     bool             `json:"-"`
-	TokenAcesso  string           `json:"access_token,omitempty"`
 }
 
 type EstaticasUsuario struct {
