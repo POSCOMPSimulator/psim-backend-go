@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"os"
+
+	"poscomp-simulator.com/backend/auth"
 )
 
 type Usuario struct {
@@ -37,7 +39,8 @@ func (u *Usuario) GetDummy() {
 }
 
 func (u *Usuario) Create(db *sql.DB) error {
-	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso) VALUES($1, $2, $3, $4)", u.Email, u.Nome, u.Senha, u.NivelAcesso); err != nil {
+	hashedPassword, nil := auth.HashPassword(u.Senha)
+	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso) VALUES($1, $2, $3, $4)", u.Email, u.Nome, hashedPassword, u.NivelAcesso); err != nil {
 		return errors.New("Usuário não pode ser criado.")
 	}
 	return nil

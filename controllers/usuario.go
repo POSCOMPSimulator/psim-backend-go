@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
 )
@@ -24,11 +25,12 @@ func (a *App) CreateUsuario(w http.ResponseWriter, r *http.Request) {
 
 	if err := user.Get(a.DB); err != nil {
 		user.Create(a.DB)
+		user.Senha = ""
 		utils.RespondWithJSON(w, http.StatusCreated, user)
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, user)
+	utils.RespondWithError(w, http.StatusFound, "Usuário já existe.")
 	return
 
 }
@@ -51,7 +53,8 @@ func (a *App) LoginUsuario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Senha != senha {
+	err = auth.CheckPassword(senha, user.Senha)
+	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "senha incorreta.")
 		return
 	}
