@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
@@ -14,7 +14,7 @@ import (
 )
 
 type App struct {
-	Router     *mux.Router
+	Router     *gin.Engine
 	DB         *sql.DB
 	tokenMaker auth.Maker
 	Cors       *cors.Cors
@@ -31,9 +31,6 @@ func (a *App) Initialize() error {
 		return err
 	}
 
-	a.Router = mux.NewRouter()
-	a.initializeRoutes()
-
 	a.Cors = cors.New(cors.Options{
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -43,10 +40,14 @@ func (a *App) Initialize() error {
 	})
 
 	a.tokenMaker, err = auth.NewPasetoMaker(os.Getenv("TOKEN_SYMMETRIC_KEY"))
+
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
+
+	a.Router = gin.Default()
+	a.initializeRoutes()
 
 	return nil
 

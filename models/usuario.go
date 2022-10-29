@@ -12,7 +12,7 @@ type Usuario struct {
 	Email        string           `json:"email,omitempty"`
 	NivelAcesso  int16            `json:"nivel_acesso"`
 	Nome         string           `json:"nome"`
-	Senha        string           `json:"senha,omitempty"`
+	Senha        string           `json:"-"`
 	Estatisticas EstaticasUsuario `json:"estatisticas,omitempty"`
 	Completo     bool             `json:"-"`
 	TokenAcesso  string           `json:"access_token,omitempty"`

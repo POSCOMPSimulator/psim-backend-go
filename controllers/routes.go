@@ -3,47 +3,53 @@ package controllers
 import (
 	"net/http"
 
-	"poscomp-simulator.com/backend/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func (a *App) initializeRoutes() {
 
+	public := a.Router.Group("/")
+
+	authorized := a.Router.Group("/")
+	authorized.Use(authMiddleware(a.tokenMaker, 0))
+
+	moderator := a.Router.Group("/")
+	moderator.Use(authMiddleware(a.tokenMaker, 1))
+
 	// Rota base
-	a.Router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		utils.RespondWithText(w, http.StatusOK, "PSIM Backend 2.0.0 in Golang")
-	})
+	public.GET("/", func(ctx *gin.Context) { ctx.String(http.StatusOK, "PSIM Backend 2.0.0 in Golang") })
 
 	// Rotas de usuário
-	a.Router.HandleFunc("/usuario/", a.GetUsuario).Methods("GET")
-	a.Router.HandleFunc("/usuario/", a.CreateUsuario).Methods("POST")
-	a.Router.HandleFunc("/usuario/", a.PromoteUsuario).Methods("PUT")
-	a.Router.HandleFunc("/usuario/", a.DeleteUsuario).Methods("DELETE")
-	a.Router.HandleFunc("/usuario/login/", a.LoginUsuario).Methods("POST")
+	public.POST("/usuario/", a.CreateUsuario)
+	public.POST("/usuario/login/", a.LoginUsuario)
+	authorized.GET("/usuario/", a.GetUsuario)
+	authorized.DELETE("/usuario/", a.DeleteUsuario)
+	moderator.PUT("/usuario/", a.PromoteUsuario)
 
-	// Rotas de questão
-	a.Router.HandleFunc("/questao/", a.GetQuestoes).Methods("GET")
-	a.Router.HandleFunc("/questao/", a.CreateQuestao).Methods("POST")
-	a.Router.HandleFunc("/questao/", a.ReportQuestao).Methods("PUT")
-	a.Router.HandleFunc("/questao/", a.UpdateQuestao).Methods("PATCH")
-	a.Router.HandleFunc("/questao/sumario/", a.GetQSumario).Methods("GET")
-	a.Router.HandleFunc("/questao/{id}/", a.DeleteQuestao).Methods("DELETE")
-	a.Router.HandleFunc("/questao/{id}/erros/", a.GetErrosQuestao).Methods("GET")
-	a.Router.HandleFunc("/questao/{id}/erros/", a.SolveErrosQuestao).Methods("DELETE")
+	// // Rotas de questão
+	public.GET("/questao/", a.GetQuestoes)
+	public.GET("/questao/sumario", a.GetQSumario)
+	public.PUT("/questao/", a.ReportQuestao)
+	moderator.GET("/questao/:id/erros/", a.GetErrosQuestao)
+	moderator.DELETE("/questao/:id/erros/", a.SolveErrosQuestao)
+	moderator.POST("/questao/", a.CreateQuestao)
+	moderator.PATCH("/questao/", a.UpdateQuestao)
+	moderator.DELETE("/questao/:id", a.DeleteQuestao)
 
-	// Rotas de simulado
-	a.Router.HandleFunc("/simulado/", a.GetSimulados).Methods("GET")
-	a.Router.HandleFunc("/simulado/", a.CreateSimulado).Methods("POST")
-	a.Router.HandleFunc("/simulado/{id}/", a.GetSimulado).Methods("GET")
-	a.Router.HandleFunc("/simulado/{id}/{to_state}/", a.UpdateStateSimulado).Methods("PUT")
-	a.Router.HandleFunc("/simulado/{id}/", a.UpdateRespostasSimulado).Methods("PATCH")
-	a.Router.HandleFunc("/simulado/{id}/", a.DeleteSimulado).Methods("DELETE")
+	// // Rotas de simulado
+	authorized.GET("/simulado/", a.GetSimulados)
+	authorized.POST("/simulado/", a.CreateSimulado)
+	authorized.GET("/simulado/:id", a.GetSimulado)
+	authorized.PUT("/simulado/:id/:to_state", a.UpdateStateSimulado)
+	authorized.PATCH("/simulado/:id", a.UpdateRespostasSimulado)
+	authorized.DELETE("/simulado/:id", a.DeleteSimulado)
 
-	// Rotas de comentários
-	a.Router.HandleFunc("/comentario/", a.GetComentariosSinalizados).Methods("GET")
-	a.Router.HandleFunc("/comentario/questao/{id}/", a.GetComentariosQuestao).Methods("GET")
-	a.Router.HandleFunc("/comentario/questao/{id}/", a.PostComentarioQuestao).Methods("POST")
-	a.Router.HandleFunc("/comentario/{id}/", a.ReportComentario).Methods("PUT")
-	a.Router.HandleFunc("/comentario/{id}/", a.DeleteComentario).Methods("DELETE")
-	a.Router.HandleFunc("/comentario/{id}/reports/", a.CleanComentario).Methods("DELETE")
+	// // Rotas de comentários
+	public.GET("/comentario/questao/:id", a.GetComentariosQuestao)
+	public.PUT("/comentario/:id", a.ReportComentario)
+	authorized.POST("/comentario/questao/:id", a.PostComentarioQuestao)
+	authorized.DELETE("/comentario/:id", a.DeleteComentario)
+	moderator.GET("/comentario/", a.GetComentariosSinalizados)
+	moderator.DELETE("/comentario/:id/reports/", a.CleanComentario)
 
 }

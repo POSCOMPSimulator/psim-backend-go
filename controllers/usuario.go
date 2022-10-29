@@ -1,170 +1,166 @@
 package controllers
 
 import (
-	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
 )
 
-func (a *App) CreateUsuario(w http.ResponseWriter, r *http.Request) {
+func (a *App) CreateUsuario(ctx *gin.Context) {
 
-	var user models.Usuario
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&user); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	type createUserRequest struct {
+		Email           string `json:"email" binding:"required,email"`
+		Username        string `json:"nome" binding:"required,alphanum"`
+		Password        string `json:"senha" binding:"required,len=8"`
+		ConfirmPassword string `json:"confirma_senha" binding:"required,eqfield=Password"`
+	}
+
+	req := createUserRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
-	defer r.Body.Close()
 
-	user.NivelAcesso = 0
+	user := &models.Usuario{
+		Email: req.Email,
+		Senha: req.Password,
+		Nome:  req.Username,
+	}
 
 	if err := user.Get(a.DB); err != nil {
 		user.Create(a.DB)
-		user.Senha = ""
-		utils.RespondWithJSON(w, http.StatusCreated, user)
+		ctx.Status(http.StatusCreated)
 		return
 	}
 
-	utils.RespondWithError(w, http.StatusFound, "Usuário já existe.")
+	ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("Usuário já existe")))
 	return
 
 }
 
-func (a *App) LoginUsuario(w http.ResponseWriter, r *http.Request) {
+func (a *App) LoginUsuario(ctx *gin.Context) {
 
-	var user models.Usuario
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&user); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
-		return
+	type loginUserRequest struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"senha" binding:"required,len=8"`
 	}
-	defer r.Body.Close()
 
-	senha := user.Senha
-
-	var err error
-	if err = user.Get(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusNotFound, "usuário não encontrado")
+	req := loginUserRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
 
-	err = auth.CheckPassword(senha, user.Senha)
-	if err != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, "senha incorreta.")
+	user := &models.Usuario{
+		Email: req.Email,
+	}
+
+	if err := user.Get(a.DB); err != nil {
+		ctx.JSON(http.StatusNotFound, utils.RespondWithError(errors.New("Usuário não encontrado.")))
 		return
 	}
 
-	user.Senha = ""
+	if err := auth.CheckPassword(req.Password, user.Senha); err != nil {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("Senha incorreta.")))
+		return
+	}
 
-	tokenDuration, err := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
-	access_token, err := a.tokenMaker.CreateToken(user.Nome, tokenDuration)
+	tokenDuration, _ := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
+	access_token, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, tokenDuration)
 	user.TokenAcesso = access_token
 
-	utils.RespondWithJSON(w, http.StatusOK, user)
+	ctx.JSON(http.StatusOK, user)
 	return
 
 }
 
-func (a *App) GetUsuario(w http.ResponseWriter, r *http.Request) {
+func (a *App) GetUsuario(ctx *gin.Context) {
 
-	// user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	// if err != nil {
-	// 	utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-	// 	return
-	// }
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
+	user := models.Usuario{
+		Email:    authPayload.UserID,
+		Completo: true,
+	}
 
-	// user.Completo = true
-	// if err = user.Get(a.DB); err != nil {
-	// 	utils.RespondWithError(w, http.StatusNotFound, err.Error())
-	// 	return
-	// }
+	if err := user.Get(a.DB); err != nil {
+		ctx.JSON(http.StatusNotFound, utils.RespondWithError(errors.New("Usuário não encontrado.")))
+		return
+	}
 
-	// utils.RespondWithJSON(w, http.StatusOK, user)
+	ctx.JSON(http.StatusOK, user)
 	return
 }
 
-func (a *App) PromoteUsuario(w http.ResponseWriter, r *http.Request) {
+func (a *App) PromoteUsuario(ctx *gin.Context) {
 
-	// user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	// if err != nil {
-	// 	utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-	// 	return
-	// }
+	type promoteUserRequest struct {
+		Email     string `json:"email" binding:"required,email"`
+		NextLevel int16  `json:"nivel" binding:"required"`
+	}
 
-	// if err = user.Get(a.DB); err != nil {
-	// 	utils.RespondWithError(w, http.StatusNotFound, err.Error())
-	// 	return
-	// }
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
 
-	// email_target := r.FormValue("email")
-	// if email_target == "" {
-	// 	utils.RespondWithError(w, http.StatusBadRequest, "Campo email não encontrado.")
-	// 	return
-	// }
+	req := promoteUserRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
 
-	// next_level_st := r.FormValue("nivel")
-	// if next_level_st == "" {
-	// 	utils.RespondWithError(w, http.StatusBadRequest, "Campo nivel não encontrado.")
-	// 	return
-	// }
+	if authPayload.UserLevel <= req.NextLevel {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("Usuário não autorizado a realizar a promoção de conta.")))
+		return
+	}
 
-	// next_level, err := strconv.ParseInt(next_level_st, 10, 16)
-	// if err != nil {
-	// 	utils.RespondWithError(w, http.StatusBadRequest, "Campo nivel mal formatado.")
-	// 	return
-	// }
+	userToPromote := models.Usuario{Email: req.Email, NivelAcesso: req.NextLevel}
+	if err := userToPromote.Promote(a.DB); err != nil {
+		ctx.JSON(http.StatusNotFound, utils.RespondWithError(errors.New("Usuário a ser promovido não encontrado.")))
+		return
+	}
 
-	// if user.NivelAcesso <= int16(next_level) {
-	// 	utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a promoção de conta.")
-	// 	return
-	// }
-
-	// userToPromote := models.Usuario{Email: email_target, NivelAcesso: int16(next_level)}
-	// if err = userToPromote.Promote(a.DB); err != nil {
-	// 	utils.RespondWithError(w, http.StatusNotFound, "Usuário a ser promovido não encontrado.")
-	// 	return
-	// }
-
-	// w.WriteHeader(http.StatusOK)
+	ctx.Status(http.StatusOK)
 
 }
 
-func (a *App) DeleteUsuario(w http.ResponseWriter, r *http.Request) {
+func (a *App) DeleteUsuario(ctx *gin.Context) {
 
-	// user, err := auth.VerifyIdToken(r.Header.Get("Authorization"))
-	// if err != nil {
-	// 	utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
-	// 	return
-	// }
+	type deleteUserRequest struct {
+		Email string `json:"email"`
+	}
 
-	// if err = user.Get(a.DB); err != nil {
-	// 	utils.RespondWithError(w, http.StatusNotFound, err.Error())
-	// 	return
-	// }
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
 
-	// email_target := r.FormValue("email")
-	// if email_target == "" {
-	// 	user.Delete(a.DB)
-	// 	return
-	// }
+	req := deleteUserRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
 
-	// userToDelete := models.Usuario{Email: email_target}
-	// if err = userToDelete.Get(a.DB); err != nil {
-	// 	utils.RespondWithError(w, http.StatusNotFound, "Usuário a ser deletado não encontrado.")
-	// 	return
-	// }
+	if req.Email == "" {
+		user := models.Usuario{Email: authPayload.UserID}
+		user.Delete(a.DB)
+		ctx.Status(http.StatusOK)
+		return
+	}
 
-	// if user.NivelAcesso < userToDelete.NivelAcesso {
-	// 	utils.RespondWithError(w, http.StatusUnauthorized, "Usuário não autorizado a realizar a exclusão de conta.")
-	// 	return
-	// }
+	userToDelete := models.Usuario{Email: req.Email}
+	if err := userToDelete.Get(a.DB); err != nil {
+		ctx.JSON(http.StatusNotFound, utils.RespondWithError(errors.New("Usuário a ser apagado não encontrado.")))
+		return
+	}
 
-	// userToDelete.Delete(a.DB)
+	if authPayload.UserLevel < userToDelete.NivelAcesso {
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("Usuário não autorizado a realizar a exclusão de conta.")))
+		return
+	}
+
+	userToDelete.Delete(a.DB)
+	ctx.Status(http.StatusOK)
 	return
 
 }
