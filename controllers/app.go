@@ -6,19 +6,21 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
+	"poscomp-simulator.com/backend/auth"
 )
 
 type App struct {
-	Router *mux.Router
-	DB     *sql.DB
-	Cors   *cors.Cors
+	Router     *gin.Engine
+	DB         *sql.DB
+	tokenMaker auth.Maker
+	Cors       *cors.Cors
 }
 
-func (a *App) Initialize() {
+func (a *App) Initialize() error {
 
 	_ = godotenv.Load()
 
@@ -26,10 +28,8 @@ func (a *App) Initialize() {
 	a.DB, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
-
-	a.Router = mux.NewRouter()
-	a.initializeRoutes()
 
 	a.Cors = cors.New(cors.Options{
 		AllowCredentials: true,
@@ -38,6 +38,18 @@ func (a *App) Initialize() {
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
 	})
+
+	a.tokenMaker, err = auth.NewPasetoMaker(os.Getenv("TOKEN_SYMMETRIC_KEY"))
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	a.Router = gin.Default()
+	a.initializeRoutes()
+
+	return nil
 
 }
 

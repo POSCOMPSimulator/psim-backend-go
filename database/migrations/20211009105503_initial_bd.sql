@@ -3,9 +3,25 @@
 CREATE TABLE IF NOT EXISTS usuario (
  email text NOT NULL,
  nome text NOT NULL,
- foto_perfil text NOT NULL,
+ senha text NOT NULL,
  nivel_acesso smallint NOT NULL DEFAULT 0,
  PRIMARY KEY (email)
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+ id uuid NOT NULL,
+ email text NOT NULL,
+ refresh_token text NOT NULL,
+ user_agent text NOT NULL,
+ client_ip text NOT NULL,
+ is_blocked boolean NOT NULL DEFAULT false,
+ created_at timestamptz NOT NULL DEFAULT (now()),
+ expires_at timestamptz NOT NULL,
+ PRIMARY KEY (id),
+ CONSTRAINT fk_usuario
+    FOREIGN KEY(email)
+        REFERENCES usuario(email)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS questao (
@@ -159,6 +175,7 @@ CREATE TABLE IF NOT EXISTS sinalizacao_questao (
 -- +goose StatementBegin
 DROP TABLE IF EXISTS "questao" CASCADE;
 DROP TABLE IF EXISTS "usuario" CASCADE;
+DROP TABLE IF EXISTS "sessions" CASCADE;
 DROP TABLE IF EXISTS "simulado" CASCADE;
 DROP TABLE IF EXISTS "correcao" CASCADE;
 DROP TABLE IF EXISTS "imagem_questao" CASCADE;

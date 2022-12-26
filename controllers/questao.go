@@ -1,195 +1,144 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"poscomp-simulator.com/backend/models/questao"
 	"poscomp-simulator.com/backend/utils"
 )
 
-func (a *App) GetQuestoes(w http.ResponseWriter, r *http.Request) {
+func (a *App) GetQuestoes(ctx *gin.Context) {
 
-	r.ParseForm()
-
-	var batch questao.BatchQuestoes
-	if val, ok := r.Form["anos"]; ok {
-		batch.Filtros.Anos = make([]int, len(val))
-		for e, v := range val {
-			i, err := strconv.Atoi(v)
-
-			if err != nil {
-				utils.RespondWithError(w, http.StatusBadRequest, "Campo anos mal formatado")
-				return
-			}
-
-			batch.Filtros.Anos[e] = i
-		}
+	type queryRequest struct {
+		Anos        []int    `form:"anos"`
+		Areas       []string `form:"areas"`
+		Sinalizadas bool     `form:"sinalizadas"`
 	}
 
-	if val, ok := r.Form["areas"]; ok {
-		batch.Filtros.Areas = val
-	}
-
-	if _, ok := r.Form["sinalizadas"]; ok {
-		batch.Filtros.Sinalizadas = true
-	}
-
-	if err := batch.Get(a.DB); err != nil {
-		fmt.Println(err)
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, batch)
-
-}
-
-func (a *App) GetQSumario(w http.ResponseWriter, r *http.Request) {
-
-	var sq questao.SumarioQuestoes
-	sq.Get(a.DB)
-	utils.RespondWithJSON(w, http.StatusOK, sq)
-
-}
-
-func (a *App) GetErrosQuestao(w http.ResponseWriter, r *http.Request) {
-
-	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
+	query := queryRequest{}
+	if err := ctx.ShouldBind(&query); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
 
+	var batch questao.BatchQuestoes
+	batch.Filtros.Areas = query.Areas
+	batch.Filtros.Anos = query.Anos
+	batch.Filtros.Sinalizadas = query.Sinalizadas
+
+	if err := batch.Get(a.DB); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, batch)
+
+}
+
+func (a *App) GetQSumario(ctx *gin.Context) {
+
+	var sq questao.SumarioQuestoes
+	sq.Get(a.DB)
+	ctx.JSON(http.StatusOK, sq)
+
+}
+
+func (a *App) GetErrosQuestao(ctx *gin.Context) {
+
 	var errosq questao.ErrosQuestao
 	var err error
-	vars := mux.Vars(r)
+	qid := ctx.Param("id")
 
-	if value, ok := vars["id"]; ok {
-		errosq.ID, err = strconv.Atoi(value)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
-			return
-		}
-	} else {
-		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	errosq.ID, err = strconv.Atoi(qid)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("ID mal formatado.")))
 		return
 	}
 
 	errosq.Get(a.DB)
-	utils.RespondWithJSON(w, http.StatusOK, errosq)
+	ctx.JSON(http.StatusOK, errosq)
 
 }
 
-func (a *App) SolveErrosQuestao(w http.ResponseWriter, r *http.Request) {
-
-	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
-		return
-	}
+func (a *App) SolveErrosQuestao(ctx *gin.Context) {
 
 	var errosq questao.ErrosQuestao
-	vars := mux.Vars(r)
 	var err error
-	if value, ok := vars["id"]; ok {
-		errosq.ID, err = strconv.Atoi(value)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
-			return
-		}
-	} else {
-		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	qid := ctx.Param("id")
+
+	errosq.ID, err = strconv.Atoi(qid)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("ID mal formatado.")))
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&errosq); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&errosq); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
-	defer r.Body.Close()
 
 	errosq.Solve(a.DB)
 
 }
 
-func (a *App) CreateQuestao(w http.ResponseWriter, r *http.Request) {
-
-	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
-		return
-	}
+func (a *App) CreateQuestao(ctx *gin.Context) {
 
 	var q questao.Questao
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&q); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&q); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
-	defer r.Body.Close()
 
 	if err := q.Create(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	ctx.Status(http.StatusCreated)
 
 }
 
-func (a *App) ReportQuestao(w http.ResponseWriter, r *http.Request) {
+func (a *App) ReportQuestao(ctx *gin.Context) {
 
 	var m questao.MensagemErro
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&m); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&m); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
-	defer r.Body.Close()
 
 	if err := m.Report(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
 		return
 	}
 
 }
 
-func (a *App) UpdateQuestao(w http.ResponseWriter, r *http.Request) {
-
-	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
-		return
-	}
+func (a *App) UpdateQuestao(ctx *gin.Context) {
 
 	var q questao.Questao
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&q); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&q); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
-	defer r.Body.Close()
 
 	if err := q.Update(a.DB); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
 		return
 	}
 
 }
 
-func (a *App) DeleteQuestao(w http.ResponseWriter, r *http.Request) {
+func (a *App) DeleteQuestao(ctx *gin.Context) {
 
-	if ok, _ := utils.AuthUser(a.DB, w, r, 1); !ok {
-		return
-	}
-
-	vars := mux.Vars(r)
 	var err error
 	var q questao.Questao
-	if id, ok := vars["id"]; ok {
-		q.ID, err = strconv.Atoi(id)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
-			return
-		}
-	} else {
-		utils.RespondWithError(w, http.StatusBadRequest, "ID mal formatado.")
+	qid := ctx.Param("id")
+	q.ID, err = strconv.Atoi(qid)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("ID mal formatado.")))
 		return
 	}
 
