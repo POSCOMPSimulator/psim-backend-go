@@ -29,14 +29,20 @@ func (a *App) CreateUsuario(ctx *gin.Context) {
 		return
 	}
 
+	verificationCode := utils.GenerateVerificationCode()
+	recoverCode := utils.GenerateVerificationCode()
+
 	user := &models.Usuario{
-		Email: req.Email,
-		Senha: req.Password,
-		Nome:  req.Username,
+		Email:             req.Email,
+		Senha:             req.Password,
+		Nome:              req.Username,
+		CodigoVerificacao: verificationCode,
+		CodigoRecuperacao: recoverCode,
 	}
 
 	if err := user.Get(a.DB); err != nil {
 		user.Create(a.DB)
+		a.Mailer.SendVerificationMail([]string{user.Email}, verificationCode)
 		ctx.Status(http.StatusCreated)
 		return
 	}

@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS usuario (
  nome text NOT NULL,
  senha text NOT NULL,
  nivel_acesso smallint NOT NULL DEFAULT 0,
+ codigo_verificacao text NOT NULL,
+ codigo_recuperacao text NOT NULL,
+ verificado boolean NOT NULL DEFAULT false,
  PRIMARY KEY (email)
 );
 

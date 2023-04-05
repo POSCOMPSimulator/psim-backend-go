@@ -9,12 +9,15 @@ import (
 )
 
 type Usuario struct {
-	Email        string           `json:"email,omitempty"`
-	NivelAcesso  int16            `json:"nivel_acesso"`
-	Nome         string           `json:"nome"`
-	Senha        string           `json:"-"`
-	Estatisticas EstaticasUsuario `json:"estatisticas,omitempty"`
-	Completo     bool             `json:"-"`
+	Email             string           `json:"email,omitempty"`
+	NivelAcesso       int16            `json:"nivel_acesso"`
+	Nome              string           `json:"nome"`
+	Senha             string           `json:"-"`
+	Estatisticas      EstaticasUsuario `json:"estatisticas,omitempty"`
+	Completo          bool             `json:"-"`
+	CodigoVerificacao string           `json:"-"`
+	CodigoRecuperacao string           `json:"-"`
+	Verificado        bool             `json:"-"`
 }
 
 type EstaticasUsuario struct {
@@ -39,7 +42,7 @@ func (u *Usuario) GetDummy() {
 
 func (u *Usuario) Create(db *sql.DB) error {
 	hashedPassword, nil := auth.HashPassword(u.Senha)
-	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso) VALUES($1, $2, $3, $4)", u.Email, u.Nome, hashedPassword, u.NivelAcesso); err != nil {
+	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso, codigo_verificacao, codigo_recuperacao) VALUES($1, $2, $3, $4, $5, $6)", u.Email, u.Nome, hashedPassword, u.NivelAcesso, u.CodigoVerificacao, u.CodigoRecuperacao); err != nil {
 		return errors.New("Usuário não pode ser criado.")
 	}
 	return nil
