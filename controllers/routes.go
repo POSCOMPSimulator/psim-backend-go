@@ -10,6 +10,9 @@ func (a *App) initializeRoutes() {
 
 	public := a.Router.Group("/")
 
+	unverified := a.Router.Group("/")
+	unverified.Use(authMiddlewareUnverifiedUser(a.tokenMaker, 0))
+
 	authorized := a.Router.Group("/")
 	authorized.Use(authMiddleware(a.tokenMaker, 0))
 
@@ -23,6 +26,7 @@ func (a *App) initializeRoutes() {
 	public.POST("/usuario/", a.CreateUsuario)
 	public.POST("/usuario/login/", a.LoginUsuario)
 	public.POST("/usuario/refresh", a.RenewTokenUsuario)
+	unverified.POST("/usuario/verifica", a.VerificaUsuario)
 	authorized.GET("/usuario/", a.GetUsuario)
 	authorized.DELETE("/usuario/", a.DeleteUsuario)
 	moderator.PUT("/usuario/", a.PromoteUsuario)

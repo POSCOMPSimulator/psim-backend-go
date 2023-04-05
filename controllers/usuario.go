@@ -89,10 +89,10 @@ func (a *App) LoginUsuario(ctx *gin.Context) {
 	}
 
 	tokenDuration, _ := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
-	access_token, access_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, tokenDuration)
+	access_token, access_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, user.Verificado, tokenDuration)
 
 	refreshTokenDuration, _ := time.ParseDuration(os.Getenv("REFRESH_TOKEN_DURATION"))
-	refresh_token, refresh_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, refreshTokenDuration)
+	refresh_token, refresh_payload, _ := a.tokenMaker.CreateToken(user.Email, user.NivelAcesso, user.Verificado, refreshTokenDuration)
 
 	session := &models.Session{
 		ID:           refresh_payload.ID,
@@ -180,7 +180,7 @@ func (a *App) RenewTokenUsuario(ctx *gin.Context) {
 	}
 
 	tokenDuration, _ := time.ParseDuration(os.Getenv("ACCESS_TOKEN_DURATION"))
-	access_token, access_payload, _ := a.tokenMaker.CreateToken(refresh_payload.UserID, refresh_payload.UserLevel, tokenDuration)
+	access_token, access_payload, _ := a.tokenMaker.CreateToken(refresh_payload.UserID, refresh_payload.UserLevel, refresh_payload.Verificado, tokenDuration)
 
 	res := renewTokenResponse{
 		AccessToken:          access_token,
@@ -190,6 +190,30 @@ func (a *App) RenewTokenUsuario(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 	return
 
+}
+
+func (a *App) VerificaUsuario(ctx *gin.Context) {
+
+	type verificaUsuarioRequest struct {
+		CodigoVerificacao string `json:"codigo_verificacao" binding:"required"`
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
+
+	req := verificaUsuarioRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
+
+	userToVerify := models.Usuario{Email: authPayload.UserID, CodigoVerificacao: req.CodigoVerificacao}
+	if err := userToVerify.Verify(a.DB); err != nil {
+		ctx.JSON(http.StatusNotAcceptable, utils.RespondWithError(errors.New("Código de verificação inválido.")))
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+	return
 }
 
 func (a *App) GetUsuario(ctx *gin.Context) {
