@@ -208,7 +208,7 @@ func (a *App) VerificaUsuario(ctx *gin.Context) {
 
 	userToVerify := models.Usuario{Email: authPayload.UserID, CodigoVerificacao: req.CodigoVerificacao}
 	if err := userToVerify.Verify(a.DB); err != nil {
-		ctx.JSON(http.StatusNotAcceptable, utils.RespondWithError(errors.New("Código de verificação inválido.")))
+		ctx.JSON(http.StatusNotAcceptable, utils.RespondWithError(err))
 		return
 	}
 
