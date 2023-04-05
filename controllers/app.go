@@ -11,6 +11,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"poscomp-simulator.com/backend/auth"
+	"poscomp-simulator.com/backend/mailer"
 )
 
 type App struct {
@@ -18,6 +19,7 @@ type App struct {
 	DB         *sql.DB
 	tokenMaker auth.Maker
 	Cors       *cors.Cors
+	Mailer     *mailer.Mailer
 }
 
 func (a *App) Initialize() error {
@@ -45,6 +47,13 @@ func (a *App) Initialize() error {
 		log.Fatal(err)
 		return err
 	}
+
+	a.Mailer = mailer.NewMailer(
+		os.Getenv("SENDER_EMAIL"),
+		os.Getenv("SENDER_PASSWORD"),
+		os.Getenv("SMTP_HOST"),
+		os.Getenv("SMTP_PORT"),
+	)
 
 	a.Router = gin.Default()
 	a.initializeRoutes()
