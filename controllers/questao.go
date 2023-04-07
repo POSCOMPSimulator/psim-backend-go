@@ -80,7 +80,11 @@ func (a *App) SolveErrosQuestao(ctx *gin.Context) {
 		return
 	}
 
-	errosq.Solve(a.DB)
+	err = errosq.Solve(a.DB)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
 
 }
 
@@ -142,6 +146,10 @@ func (a *App) DeleteQuestao(ctx *gin.Context) {
 		return
 	}
 
-	q.Delete(a.DB)
+	err = q.Delete(a.DB)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
+		return
+	}
 
 }
