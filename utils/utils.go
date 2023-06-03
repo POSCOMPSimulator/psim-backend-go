@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -60,4 +62,21 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func GenerateVerificationCode() string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const codeLength = 16
+	// Generate a random code by selecting characters from the charset.
+	// The code length is fixed at 16 characters.
+	code := make([]byte, codeLength)
+	for i := range code {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			// In case of any error, return an empty string.
+			return ""
+		}
+		code[i] = charset[n.Int64()]
+	}
+	return string(code)
 }

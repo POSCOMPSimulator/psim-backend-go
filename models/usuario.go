@@ -3,18 +3,20 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"os"
 
 	"poscomp-simulator.com/backend/auth"
 )
 
 type Usuario struct {
-	Email        string           `json:"email,omitempty"`
-	NivelAcesso  int16            `json:"nivel_acesso"`
-	Nome         string           `json:"nome"`
-	Senha        string           `json:"-"`
-	Estatisticas EstaticasUsuario `json:"estatisticas,omitempty"`
-	Completo     bool             `json:"-"`
+	Email             string           `json:"email,omitempty"`
+	NivelAcesso       int16            `json:"nivel_acesso"`
+	Nome              string           `json:"nome"`
+	Senha             string           `json:"-"`
+	Estatisticas      EstaticasUsuario `json:"estatisticas,omitempty"`
+	Completo          bool             `json:"-"`
+	CodigoVerificacao string           `json:"-"`
+	CodigoRecuperacao string           `json:"-"`
+	Verificado        bool             `json:"verificado,omitempty"`
 }
 
 type EstaticasUsuario struct {
@@ -30,23 +32,16 @@ type PorcentagemQuestoesFeitas struct {
 	Tec   float32 `json:"tec"`
 }
 
-func (u *Usuario) GetDummy() {
-	u.Email = os.Getenv("DUMMY_TOKEN")
-	u.Senha = "dummy"
-	u.Nome = "Dummy User"
-	u.NivelAcesso = 32767
-}
-
 func (u *Usuario) Create(db *sql.DB) error {
 	hashedPassword, nil := auth.HashPassword(u.Senha)
-	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso) VALUES($1, $2, $3, $4)", u.Email, u.Nome, hashedPassword, u.NivelAcesso); err != nil {
+	if _, err := db.Exec("INSERT INTO usuario(email, nome, senha, nivel_acesso, codigo_verificacao, codigo_recuperacao) VALUES($1, $2, $3, $4, $5, $6)", u.Email, u.Nome, hashedPassword, u.NivelAcesso, u.CodigoVerificacao, u.CodigoRecuperacao); err != nil {
 		return errors.New("Usuário não pode ser criado.")
 	}
 	return nil
 }
 
 func (u *Usuario) Get(db *sql.DB) error {
-	if err := db.QueryRow("SELECT email, nome, senha, nivel_acesso FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.Senha, &u.NivelAcesso); err != nil {
+	if err := db.QueryRow("SELECT email, nome, senha, nivel_acesso, verificado FROM usuario WHERE email=$1", u.Email).Scan(&u.Email, &u.Nome, &u.Senha, &u.NivelAcesso, &u.Verificado); err != nil {
 		if err == sql.ErrNoRows {
 			return errors.New("Usuário não encontrado.")
 		}
@@ -73,6 +68,25 @@ func (u *Usuario) Promote(db *sql.DB) error {
 		return err
 	}
 	return nil
+}
+
+func (u *Usuario) Verify(db *sql.DB) error {
+
+	auxUser := &Usuario{}
+	if err := db.QueryRow("SELECT codigo_verificacao FROM usuario WHERE email=$1", u.Email).Scan(&auxUser.CodigoVerificacao); err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("Usuário não encontrado.")
+		}
+		return err
+	}
+
+	if auxUser.CodigoVerificacao != u.CodigoVerificacao {
+		return errors.New("Código de verificação inválido.")
+	}
+
+	db.QueryRow("UPDATE usuario SET verificado = true WHERE email = $1", u.Email)
+	return nil
+
 }
 
 func (u *Usuario) Delete(db *sql.DB) error {
