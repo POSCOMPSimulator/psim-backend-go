@@ -20,7 +20,7 @@ func (a *App) GetSimulados(ctx *gin.Context) {
 	bsim.IDUsuario = authPayload.UserID
 
 	if err := bsim.Get(a.DB); err != nil {
-		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(err))
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
 		return
 	}
 

@@ -47,7 +47,7 @@ func (a *App) CreateUsuario(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("Usuário já existe")))
+	ctx.JSON(http.StatusConflict, utils.RespondWithError(errors.New("Usuário já existe")))
 	return
 
 }

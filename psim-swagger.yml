@@ -1,0 +1,1136 @@
+swagger: '2.0'
+info:
+  title: API Rest - PSIM Backend
+  version: 2.0.0
+# host: api.server.test
+# basePath: /
+schemes:
+  - https
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: Token do usuário logado no sistema. Na forma 'Bearer [token].'
+tags:
+  - name: Usuário
+    description: Rotas referentes a usuários
+  - name: Questão
+    description: Rotas referentes a questões
+  - name: Simulado
+    description: Rotas referentes a simulados
+  - name: Comentários
+    description: Rotas referentes a comentários
+paths:
+  /usuario/:
+    get:
+      summary: Recupera o perfil de um usuário.
+      description: Recupera o perfil de um usuário.
+      tags:
+        - Usuário
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/perfil_usuario'
+        '404':
+          description: Usuário não encontrado.
+    post:
+      summary: Cria um novo usuário.
+      description: Registra um novo usuário com nível de acesso 0.
+      tags:
+        - Usuário
+      parameters:
+        - name: user_info
+          in: body
+          description: Informações do usuário
+          required: true
+          schema:
+            properties:
+              email:
+                description: Email do usuário.
+                type: string
+                format: email
+              nome:
+                description: Nome do usuário.
+              senha:
+                description: Senha do usuário.
+                minLength: 8
+                maxLength: 8
+                format: password
+              confirma_senha:
+                description: Nome do usuário.
+                minLength: 8
+                maxLength: 8
+                format: password
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Entrada inválida.
+        '409':
+          description: Usuário já existe.
+    put:
+      summary: Altera o nível de acesso de um usuário.
+      description: Altera o nível de acesso de um usuário. Um usuário com nível de acesso 'x' pode promover outro para qualquer nível menor ou igual o seu. Usuários de nível 0 não podem promover ninguém.
+      tags:
+        - Usuário
+      security:
+        - ApiKeyAuth: []
+      parameters:
+      - name: user_info
+        in: body
+        description: Informações do usuário
+        required: true
+        schema:
+          properties:
+            email:
+              description: Email do usuário.
+              type: string
+              format: email
+            nivel:
+              type: integer
+              description: Nível para o qual o usuário deve ser promovido.
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Entrada inválida.
+        '401':
+          description: Usuário não autorizado a realizar a promoção.
+        '404':
+          description: Usuário a ser promovido não encontrado.
+    delete:
+      summary: Exclui a conta de um usuário.
+      description: Exclui a conta de um usuário. Se nenhum e-mail for passado exclui a conta do usuário logado. Caso um e-mail seja passado e o usuário logado tenha nível de acesso superior ao do e-mail, a conta associada ao e-mail será excluída.
+      tags:
+        - Usuário
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: user_info
+          in: body
+          description: Informações do usuário
+          required: true
+          schema:
+            properties:
+              email:
+                description: Email do usuário.
+                type: string
+                format: email
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Entrada inválida.
+        '401':
+          description: Usuário não autorizado a realizar a exclusão de conta.
+        '404':
+          description: Usuário a ser apagado não encontrado.
+  /usuario/login/:
+    post:
+      summary: Realiza o login de um usuário.
+      description: Realiza o login de um usuário.
+      tags:
+        - Usuário
+      parameters:
+        - name: user_info
+          in: body
+          description: Informações do usuário
+          required: true
+          schema:
+            properties:
+              email:
+                description: Email do usuário.
+                type: string
+                format: email
+              senha:
+                description: Senha do usuário.
+                minLength: 8
+                maxLength: 8
+                format: password
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Entrada inválida.
+        '401':
+          description: Senha incorreta.
+        '404':
+          description: Usuário não encontrado.
+  /usuario/refresh/:
+    post:
+      summary: Atualiza o token de acesso de um usuário.
+      description: Atualiza o token de acesso de um usuário.
+      tags:
+        - Usuário
+      parameters:
+        - name: refresh_token
+          in: body
+          description: Token de atualização
+          required: true
+          schema:
+            properties:
+              refresh_token:
+                type: string
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Entrada inválida.
+        '401':
+          description: Problema de autenticação.
+        '404':
+          description: Usuário não encontrado.
+  /usuario/verifica/:
+    post:
+      summary: Verifica a conta de um usuário.
+      description: Verifica a conta de um usuário.
+      tags:
+        - Usuário
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: codigo_verificacao
+          in: body
+          description: Código de verificação da conta
+          required: true
+          schema:
+            properties:
+              codigo_verificacao:
+                type: string
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Entrada inválida.
+        '406':
+          description: ódigo de verificação inválido.
+  /questao/:
+    get:
+      summary: Recupera as questões do BD.
+      description: Recupera as questões do BD. Um filtro pode ser passado opcionalmente.
+      tags:
+        - Questão
+      parameters:
+        - name: anos
+          in: query
+          type: array
+          description: Anos das provas que as questões devem ser escolhidas.
+          items:
+            type: integer
+          minLength: 1
+        - name: areas
+          in: query
+          type: array
+          description: Array de strings indicando as áreas.
+          items:
+            type: string
+          minLength: 1
+        - name: sinalizadas
+          in: query
+          type: boolean
+          description: Indicativo se deve filtrar apenas por questões sinalizadas. Apenas usuários com nível de acesso maior ou igual a 1 podem usar esse filtro.
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              questoes:
+                type: array
+                items:
+                  $ref: '#/definitions/questao'
+        '400':
+          description: Entrada inválida.
+    post:
+      summary: Cria uma questão.
+      description: Cria uma questão. Usuário precisa ter nível de acesso maior que 0 para esta operação.
+      tags:
+        - Questão
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: conteudo
+          in: body
+          description: Conteúdo da questão.
+          required: true
+          schema:
+            $ref: '#/definitions/questao_criacao'
+      responses:
+        '201':
+          description: Questão foi criada.
+        '400':
+          description: Não foi possível criar a questão.
+    patch:
+      summary: Atualiza o conteúdo de uma questão.
+      description: Atualiza o conteúdo de uma questão. Usuário precisa de nível de acesso maior ou igual a 1. Ano, número e área são imutáveis.
+      tags:
+        - Questão
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: conteudo
+          in: body
+          description: Conteúdo da questão.
+          required: true
+          schema:
+            $ref: '#/definitions/questao_edicao'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Não foi possível editar a questão.
+    put:
+      summary: Sinaliza um erro na questão.
+      description: Sinaliza um erro na questão.
+      tags:
+        - Questão
+      parameters:
+        - name: mensagem_erro
+          in: body
+          schema:
+            type: object
+            properties:
+              id_questao:
+                type: integer
+              mensagem_erro:
+                type: string
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Não foi possível sinalizar erro.
+  /questao/sumario/:
+    get:
+      summary: Recupera um sumário das questões do BD.
+      description: Recupera um sumário das questões do BD. Esse sumário trará informações da quantidade de questões por área e ano disponíveis, bem como dos anos, áreas e subáreas das questões disponíveis.
+      tags:
+        - Questão
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              anos:
+                type: array
+                description: Anos das questões contidas no BD.
+                items:
+                  type: integer
+                  minimum: 2002
+              areas:
+                type: array
+                description: Áreas das questões contidas no BD.
+                items:
+                  type: string
+              subareas:
+                type: array
+                description: Subáreas das questões contidas no BD.
+                items:
+                  type: string
+  /questao/{id}/:
+    delete:
+      summary: Apaga uma questão.
+      description: Apaga uma questão. Usuário precisa de nível de acesso maior ou igual a 1.
+      tags:
+        - Questão
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID da questão.
+          required: true
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Não foi possível remover a questão.
+  /questao/{id}/erros/:
+    get:
+      summary: Recupera os erros sinalizados em uma questão.
+      description: Recupera os erros sinalizados em uma questão. Requer nível de acesso maior ou igual a 1.
+      tags:
+        - Questão
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID da questão.
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              erros:
+                type: array
+                items:
+                  type: string
+                  description: Mensagens de erro relatadas.
+    delete:
+      summary: Resolve erros sinalizados em uma questão.
+      description: Resolve os erros sinalizados em uma questão. Requer nível de acesso maior ou igual a 1.
+      tags:
+        - Questão
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID da questão.
+          required: true
+        - name: erros
+          in: body
+          schema:
+            type: object
+            properties:
+              erros:
+                type: array
+                items:
+                  type: string
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Não foi possível concluir a remoção de erros.
+  /simulado/:
+    get:
+      description: Recupera todos os simulados de um usuário.
+      summary: Recupera todos os simulados de um usuário.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              simulados:
+                type: array
+                items:
+                  $ref: '#/definitions/simulado_curto'
+        '400':
+          description: Não foi possível recuperar os simulados.
+    post:
+      description: Cria um simulado. As questões não são associadas até que se peça a realização do simulado.
+      summary: Cria um simulado.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: details
+          in: body
+          description: Informações sobre o simulado a ser criado
+          required: true
+          schema:
+            $ref: '#/definitions/simulado_criacao'
+      responses:
+        '201':
+          description: Simulado foi criado.
+        '401':
+          description: Usuário não autorizado.
+        '406':
+          description: Parâmetros incorretos (erro na quantidade de questões ou tempo de realização).
+          schema:
+            type: string
+            description: Mensagem detalhando o erro.
+  /simulado/{id}/:
+    get:
+      description: Obtém um simulado pelo ID. Só deve retornar um simulado se ele tiver sido concluído.
+      summary: Obtém um simulado pelo ID.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do simulado desejado.
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/simulado_respondido'
+        '400':
+          description: Não foi possível recuperar o simulado.
+    put:
+      description: Altera o estado de um simulado.
+      summary: Altera o estado de um simulado.
+      externalDocs:
+        url: https://viewer.diagrams.net/?tags={}&target=blank&highlight=0000ff&layers=1&nav=1&title=DER-PSim#R7VnJcuIwEP0aH0l5CdgcWSeHzFRqMksyl5TAwmhGtlyyWL9%2BWra8swbIUsmFktqthu5%2B76kBzer5yy8chdOvzMVUM3V3qVl9zTQd04FXaVglhut2KzF4nLiJycgN92SNlVFX1hlxcVRyFIxRQcKyccyCAI9FyYY4Z4uy24TR8ruGyMM1w%2F0Y0br1N3HFVFmNVjt%2FcIOJNxVpwnbywEeps8okmiKXLQoma6BZPc6YSFb%2BsoeprF1al8bN09Mt%2FvoH0e%2BO9w3bvybNWSMJNjzmSJYCx4E4b%2BjrJPQc0Zmql8pVrNICYhfqqbaMiynzWIDoILd2OZsFLpZvo8Mu97llLASjAca%2FWIiVAgeaCQamqfCpeooDtyNbDduABTixDAmlKmQkEBepx5iiKCLj1Kzc4jBLIh7UEbl%2BlOurptr1l4VH%2FZXaJOnKHCtw2VNr5RexGR%2FjHX52BhQgGGY%2BFnwF5zimSJB5%2BU2RgrqX%2BWVH7xiBj2PqipVGW2FyVdmnIZLPpU4VQVENZO0JBCX2sKgFgkUhn9wUY%2B4I%2FNk1%2FPU4AZrVUUgpKIaExmJKBL4PUVz2BWhWGUsoChMZmZClxKTq8BxzgZfP6HG9d9t60FT7RS4zjjJNiwKjb%2B92qbzH1tIw6lV7Ae4%2Bg3RQdr56yMgPm8Ipuc2Pxbv03KE6sEdOLs15dWMm1LmgNpyGFrNGvbufPzR5sw0j4s9ozMKhZnchjN2Xy03oukUjmBfKDKTEC2SDoJqYg0Fyj8CN3FEPfOK6CfhwRNZoFMeTjQmlzMSJNrtasw8WKsN30fifFwO1xyjjeVu3UlsNEyp0foXvb%2FFuzutXpp3OB4r26RV6qqKXxaTRKgdgk0mEL6LATg0GA18zWxSq1B1xWHki7hR0dY20nqV17PjVeg8abTlvTaNbx7Ou2osRc2WKQdYGiLYmG9rxKf4bxP8QRbnc1dA%2B8Gpw9siQ3jRbJWSnCvdcGbq80LRryB%2BSIFaVdzHutaqT8qtLifWajDcKjDcO47te5LvxMmx%2FK6PeFj4fx1bIFK0KDmpc2jpTXFduP9Nwiqjb79%2FUd%2FpbbXOXPyyST3xWGTHqP1kcfYPCeChIMEP8KTthdWQbOYT8CFPu7qGpWVG6XRK2GRl2uxSh%2BqPC5S4ZhfDXGoOy0eexqIR7xqArHaS8NApZ%2B2aheHeHOYF6SfAdMNl8CuoZr976LHM2DZogCnNPzZ0SP0RJLjLLKGTQObmOEJ2j6EOo1u6huKFfGQ4wpyg81mlDcfplPP3Kf4p%2BwTb%2FqyBxz%2F9vsQb%2FAQ%3D%3D
+        description: Máquina de estados referente ao simulado.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do simulado desejado.
+          required: true
+        - name: continuar_simulado
+          in: query
+          required: true
+          description: Indicativo se o simulado deve ser reiniciado ou não, caso esteja em realização
+          type: boolean
+          default: true
+        - name: batch_questoes
+          in: body
+          description: Respostas finais do simulado.
+          required: false
+          schema:
+            $ref: '#/definitions/batch_questoes'
+      responses:
+        '202':
+          description: Modificado de 'Criado' para 'Em realização'.
+          schema:
+            $ref: '#/definitions/simulado_para_realizacao'
+        '301':
+          description: Simulado foi finalizado.
+        '304':
+          description: Continuando realização de simulado.
+          schema:
+            $ref: '#/definitions/simulado_para_realizacao'
+        '401':
+          description: Usuário não autorizado
+        '404':
+          description: Simulado não encontrado
+        '406':
+          description: Simulado já foi finalizado, estado não pode ser alterado.
+    patch:
+      description: Envia uma parcial das respostas do usuário, para persistência no BD.
+      summary: Envia uma parcial das respostas do usuário.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do simulado desejado.
+          required: true
+        - name: batch_questoes
+          in: body
+          description: Parciais das questões do simulado que já foram marcadas.
+          required: true
+          schema:
+            $ref: '#/definitions/batch_questoes'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Usuário não autorizado.
+        '404':
+          description: Simulado não encontrado.
+        '406':
+          description: Simulado não está em realização.
+    delete:
+      description: Deleta um simulado do banco de dados.
+      summary: Deleta um simulado do banco de dados.
+      tags:
+        - Simulado
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do simulado desejado.
+          required: true
+      responses:
+        '200':
+          description: Simulado foi apagado.
+        '401':
+          description: Usuário não autorizado.
+        '404':
+          description: Simulado não encontrado.
+  /comentario/:
+    get:
+      summary: Recupera todos os comentários sinalizados.
+      description: Recupera todos os comentários sinalizados. Requer nível de acesso maior ou igual a 1.
+      tags:
+        - Comentários
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/comentario'
+        '204':
+          description: Nenhum comentário encontrado.
+        '401':
+          description: Usuário não autorizado a realizar a operação.
+        '404':
+          description: Usuário não encontrado.
+  /comentario/questao/{id}/:
+    get:
+      summary: Recupera os comentários de uma questão.
+      description: Recupera os comentários de uma questão.
+      tags:
+        - Comentários
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID da questão.
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              comentarios:
+                type: array
+                items:
+                  $ref: '#/definitions/comentario'
+        '204':
+          description: Nenhum comentário encontrado.
+    post:
+      summary: Publica um comentário em uma questão.
+      description: Publica um comentário em uma questão.
+      tags:
+        - Comentários
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID da questão.
+          required: true
+        - name: comentario
+          in: body
+          schema:
+            $ref: '#/definitions/comentario_criacao'
+          required: true
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Usuário não encontrado.
+  /comentario/{id}/:
+    put:
+      summary: Sinaliza um comentário como inapropriado.
+      description: Sinaliza um comentário como inapropriado.
+      tags:
+        - Comentários
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do comentário.
+          required: true
+        - name: mensagem
+          in: body
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Apaga um comentário.
+      description: Apaga um comentário. Usuário com nível de acesso maior ou igual a 1 podem apagar qualquer comentário.
+      tags:
+        - Comentários
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do comentário.
+          required: true
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Comentário não pertence ao usuário ou nível de acesso insuficiente.
+        '404':
+          description: Usuário não encontrado.
+  /comentario/{id}/reports/:
+    delete:
+      summary: Remove os reports de um comentário.
+      description: Remove os reports de um comentário. Apenas um usuário com nível de acesso maior ou igual a 1 pode realizar esta operação.
+      tags:
+        - Comentários
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          type: integer
+          in: path
+          description: ID do comentário.
+          required: true
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Comentário não pertence ao usuário ou nível de acesso insuficiente.
+        '404':
+          description: Usuário não encontrado.
+definitions:
+  simulado_curto:
+    type: object
+    required:
+      - nome
+      - estado
+    properties:
+      nome:
+        type: string
+        description: Nome do simulado
+        example: Meu simulado
+      estado:
+        type: string
+        description: Estado atual do simulado
+        enum:
+          - Criado
+          - Em realização
+          - Finalizado
+        example: Finalizado
+      areas:
+        type: array
+        description: Array de indicando a presença das áreas do simulado.
+        items:
+          type: string
+      anos:
+        type: array
+        description: Array com os anos das questões presentes no simulado
+        items:
+          type: integer
+      numero_questoes:
+        type: object
+        properties:
+          mat:
+            type: integer
+          fun:
+            type: integer
+          tec:
+            type: integer
+      correcao:
+        $ref: '#/definitions/correcao'
+  simulado_criacao:
+    type: object
+    required:
+      - nome
+    properties:
+      nome:
+        type: string
+        description: Nome do simulado
+        example: Meu simulado
+      areas:
+        type: array
+        description: Array de indicando a presença das áreas do simulado.
+        items:
+          type: string
+      numero_questoes:
+        $ref: '#/definitions/numero-questoes'
+      anos:
+        type: array
+        description: Anos das provas que as questões devem ser escolhidas.
+        items:
+          type: integer
+        minLength: 1
+        example:
+          - 2016
+          - 2020
+      tempo_limite:
+        type: integer
+        description: Tempo máximo que o usuário terá ao realizar a prova em minutos.
+        example: 100
+        default: 240
+  simulado_respondido:
+    type: object
+    properties:
+      id:
+        type: integer
+      questoes:
+        type: array
+        description: Array contendo as questões do simulado, na ordem de exibição.
+        items:
+          $ref: '#/definitions/questao'
+      respostas_atuais:
+        type: array
+        description: Array contendo as respostas marcadas pelo usuário até o momento.
+        items:
+          type: string
+          description: Resposta marcada
+          enum:
+            - A
+            - B
+            - C
+            - D
+            - E
+            - ''
+      correcao:
+        $ref: '#/definitions/correcao'
+  simulado_para_realizacao:
+    type: object
+    properties:
+      id:
+        type: integer
+      tempo_restante:
+        type: integer
+        description: Tempo restante de realização em minutos.
+      questoes:
+        type: array
+        description: Array contendo as questões do simulado, na ordem de exibição.
+        items:
+          $ref: '#/definitions/questao'
+      respostas_atuais:
+        type: array
+        description: Array contendo as respostas marcadas pelo usuário até o momento.
+        items:
+          type: string
+          description: Resposta marcada
+          enum:
+            - A
+            - B
+            - C
+            - D
+            - E
+            - ''
+  batch_questoes:
+    type: object
+    properties:
+      repostas:
+        type: array
+        items:
+          type: object
+          properties:
+            id_questao:
+              type: integer
+              description: ID da questão.
+            resposta_questao:
+              type: string
+              description: Resposta marcada
+              enum:
+                - A
+                - B
+                - C
+                - D
+                - E
+                - ''
+      tempo_restante:
+        type: integer
+        description: Tempo restante do simulado em minutos.
+  questao:
+    type: object
+    properties:
+      id:
+        type: integer
+      ano:
+        type: integer
+      numero:
+        type: integer
+        minimum: 1
+        maximum: 70
+      resposta:
+        type: integer
+        minimum: 0
+        maximum: 4
+      area:
+        type: string
+        enum:
+          - Matemática
+          - Fundamentos da Computação
+          - Tecnologias da Computação
+      subarea:
+        type: string
+      enunciado:
+        type: array
+        items:
+          type: string
+          description: Parágrafo do enunciado.
+      imagens:
+        type: object
+        properties:
+          enunciado:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens do enunciado.
+          alternativa_a:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa A.
+          alternativa_b:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa B.
+          alternativa_c:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa C.
+          alternativa_d:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa D.
+          alternativa_e:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa E.
+      alternativas:
+        type: array
+        items:
+          type: string
+          description: Texto de cada alternativa.
+        minLength: 5
+        maxLength: 5
+      sinalizada:
+        type: boolean
+  questao_criacao:
+    type: object
+    properties:
+      ano:
+        type: integer
+      numero:
+        type: integer
+        minimum: 1
+        maximum: 70
+      resposta:
+        type: integer
+        minimum: 0
+        maximum: 4
+      area:
+        type: string
+        enum:
+          - Matemática
+          - Fundamentos de Computação
+          - Tecnologias da Computação
+      subarea:
+        type: string
+      enunciado:
+        type: array
+        items:
+          type: string
+          description: Parágrafo do enunciado.
+      imagens:
+        type: object
+        properties:
+          enunciado:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens do enunciado.
+          alternativa_a:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa A.
+          alternativa_b:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa B.
+          alternativa_c:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa C.
+          alternativa_d:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa D.
+          alternativa_e:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa E.
+      alternativas:
+        type: array
+        items:
+          type: string
+          description: Texto de cada alternativa.
+        minLength: 5
+        maxLength: 5
+  questao_edicao:
+    type: object
+    properties:
+      id:
+        type: integer
+      ano:
+        type: integer
+      numero:
+        type: integer
+        minimum: 1
+        maximum: 70
+      resposta:
+        type: integer
+        minimum: 0
+        maximum: 4
+      area:
+        type: string
+        enum:
+          - Matemática
+          - Fundamentos de Computação
+          - Tecnologias da Computação
+      subarea:
+        type: string
+      enunciado:
+        type: array
+        items:
+          type: string
+          description: Parágrafo do enunciado.
+      imagens:
+        type: object
+        properties:
+          enunciado:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens do enunciado.
+          alternativa_a:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa A.
+          alternativa_b:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa B.
+          alternativa_c:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa C.
+          alternativa_d:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa D.
+          alternativa_e:
+            type: array
+            items:
+              type: string
+              description: URLs para as imagens da alternativa E.
+      alternativas:
+        type: array
+        items:
+          type: string
+          description: Texto de cada alternativa.
+        minLength: 5
+        maxLength: 5
+  correcao:
+    type: object
+    properties:
+      data_finalizacao:
+        type: string
+        format: date-time
+        example: 2021_01_30T08:30:00Z
+      tempo_realizacao:
+        type: integer
+        format: int64
+        example: 100
+      acertos:
+        $ref: '#/definitions/numero-questoes'
+      erros:
+        $ref: '#/definitions/numero-questoes'
+      branco:
+        $ref: '#/definitions/numero-questoes'
+  numero-questoes:
+    type: object
+    properties:
+      tot:
+        type: integer
+      mat:
+        type: integer
+      fun:
+        type: integer
+      tec:
+        type: integer
+  comentario:
+    type: object
+    properties:
+      autor_id:
+        type: integer
+      autor:
+        type: string
+        description: Nome do autor do comentário.
+      picture:
+        type: string
+        description: URL da foto de perfil do usuário.
+      texto:
+        type: string
+      data_publicao:
+        type: string
+        format: date-time
+      numero_sinalizacoes:
+        type: integer
+  comentario_criacao:
+    type: object
+    properties:
+      texto:
+        type: string
+      data_publicao:
+        type: string
+        format: date-time
+  perfil_usuario:
+    type: object
+    properties:
+      email:
+        type: string
+        description: Email do usuário.
+      nome:
+        type: string
+        description: Nome do usuário.
+      nivel_acesso:
+        type: integer
+        description: Nível de acesso do usuário.
+      verificado:
+        type: boolean
+        description: Indicador se o usuário verificou o perfil.
+      estatisticas:
+        type: object
+        properties:
+          num_simulados_finalizados:
+            type: integer
+          num_comentarios_publicados:
+            type: integer
+          porcentagem_questoes_feitas:
+            type: object
+            description: Porcentagens de questões respondidas pelo usuário.
+            properties:
+              geral:
+                type: integer
+                minimum: 0
+                maximum: 100
+              mat:
+                type: integer
+                minimum: 0
+                maximum: 100
+              fun:
+                type: integer
+                minimum: 0
+                maximum: 100
+              tec:
+                type: integer
+                minimum: 0
+                maximum: 100
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+basePath: /PSIM/PSIM/2.0.0
