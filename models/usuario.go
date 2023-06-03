@@ -16,7 +16,7 @@ type Usuario struct {
 	Completo          bool             `json:"-"`
 	CodigoVerificacao string           `json:"-"`
 	CodigoRecuperacao string           `json:"-"`
-	Verificado        bool             `json:"verificado,omitempty"`
+	Verificado        bool             `json:"verificado"`
 }
 
 type EstaticasUsuario struct {

@@ -37,6 +37,7 @@ func (a *App) Initialize() error {
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowedOrigins:   []string{"*"},
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
 	})
