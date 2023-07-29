@@ -49,7 +49,10 @@ type NumeroQuestoes struct {
 	Tec int `json:"tec"`
 }
 
-type Respostas map[int]int
+type Respostas struct {
+	IDs   []int `json:"ids"`
+	Resps []int `json:"resps"`
+}
 
 type Correcao struct {
 	ID              int            `json:"-"`
@@ -99,8 +102,8 @@ func (br *BatchRespostas) Update(db *sql.DB) error {
 		return errors.New("Não foi possível atualizar as respostas.")
 	}
 
-	for id, v := range br.Respostas {
-		_, err = stmt.Exec(v, br.IDSimulado, br.IDUsuario, id)
+	for i := 0; i < len(br.Respostas.IDs); i++ {
+		_, err = stmt.Exec(br.Respostas.Resps[i], br.IDSimulado, br.IDUsuario, br.Respostas.IDs[i])
 		if err != nil {
 			return errors.New("Não foi possível atualizar as respostas.")
 		}
@@ -209,7 +212,7 @@ func (s *Simulado) Start(db *sql.DB) error {
 	if s.Estado == 1 {
 		return s.Continue(db)
 	}
-	
+
 	if s.Estado != 0 {
 		return errors.New("Simulado já foi finalizado.")
 	}
@@ -254,12 +257,12 @@ func (s *Simulado) Finish(db *sql.DB) error {
 		return errors.New("Simulado não foi iniciado ou está finalizado.")
 	}
 
-	if err := s.correct(db); err != nil {
-		return errors.New("Simulado não foi possível corrigir o simulado.")
-	}
-
 	if _, err := db.Exec("UPDATE simulado SET estado = 2 WHERE id = $1", s.ID); err != nil {
 		return errors.New("Não foi possível finalizar o simulado.")
+	}
+
+	if err := s.correct(db); err != nil {
+		return errors.New("Simulado não foi possível corrigir o simulado.")
 	}
 
 	return nil
@@ -382,7 +385,7 @@ func (s *Simulado) getQuestoes(db *sql.DB) error {
 
 func (s *Simulado) getRespostas(db *sql.DB) error {
 
-	s.Respostas = map[int]int{}
+	s.Respostas = Respostas{IDs: []int{}, Resps: []int{}}
 	rows, err := db.Query("SELECT id_questao, resposta FROM questoes_simulado WHERE id_simulado = $1", s.ID)
 	if err != nil {
 		return errors.New("Não foi possível obter as respostas.")
@@ -392,10 +395,12 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 		var id int
 		var resp int
 		err := rows.Scan(&id, &resp)
-		s.Respostas[id] = resp
+		s.Respostas.IDs = append(s.Respostas.IDs, id)
 
 		if err != nil && err.Error() == `sql: Scan error on column index 1, name "resposta": converting NULL to int is unsupported` {
-			s.Respostas[id] = -1
+			s.Respostas.Resps = append(s.Respostas.Resps, -1)
+		} else {
+			s.Respostas.Resps = append(s.Respostas.Resps, resp)
 		}
 
 	}
@@ -463,7 +468,6 @@ func (s *Simulado) correct(db *sql.DB) error {
 	loc, _ := time.LoadLocation("America/Sao_Paulo")
 	tim := time.Now().In(loc)
 	s.Correcao.DataFinalizacao = tim.Format(time.RFC3339)
-
 
 	if _, err := db.Exec(query,
 		s.Correcao.Brancos.Tot, s.Correcao.Brancos.Mat, s.Correcao.Brancos.Fun, s.Correcao.Brancos.Tec,

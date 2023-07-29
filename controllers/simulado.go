@@ -140,7 +140,7 @@ func (a *App) UpdateStateSimulado(ctx *gin.Context) {
 			return
 		}
 
-		ctx.Status(http.StatusMovedPermanently)
+		ctx.Status(http.StatusAccepted)
 
 	default:
 
@@ -170,6 +170,7 @@ func (a *App) UpdateRespostasSimulado(ctx *gin.Context) {
 	bresp.IDUsuario = authPayload.UserID
 
 	if err := ctx.ShouldBindJSON(&bresp); err != nil {
+
 		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
 		return
 	}
