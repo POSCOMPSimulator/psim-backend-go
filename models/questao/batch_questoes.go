@@ -143,7 +143,7 @@ func (bq *BatchQuestoes) mountFilterQuery() (string, []interface{}) {
 
 	seps := map[bool]string{true: ",$", false: "$"}
 
-	max_len := len(bq.Filtros.Anos) + len(bq.Filtros.Areas)
+	max_len := len(bq.Filtros.Anos) + len(bq.Filtros.Areas) + len(bq.Filtros.Subareas)
 
 	args, ind_args, ind_query := make([]interface{}, max_len), 0, 1
 	queries := []string{"SELECT * FROM questao"}
@@ -169,6 +169,22 @@ func (bq *BatchQuestoes) mountFilterQuery() (string, []interface{}) {
 		queryFilter := "area IN ("
 
 		for i, v := range bq.Filtros.Areas {
+			args[ind_args] = v
+			ind_args++
+			queryFilter += seps[i > 0] + strconv.Itoa(ind_args)
+		}
+
+		queryFilter += ")"
+		queries = append(queries, queryFilter)
+		ind_query++
+
+	}
+
+	if len(bq.Filtros.Subareas) > 0 {
+
+		queryFilter := "subarea IN ("
+
+		for i, v := range bq.Filtros.Subareas {
 			args[ind_args] = v
 			ind_args++
 			queryFilter += seps[i > 0] + strconv.Itoa(ind_args)

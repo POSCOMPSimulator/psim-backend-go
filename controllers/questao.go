@@ -15,6 +15,7 @@ func (a *App) GetQuestoes(ctx *gin.Context) {
 	type queryRequest struct {
 		Anos        []int    `form:"anos"`
 		Areas       []string `form:"areas"`
+		Subareas    []string `form:"subareas"`
 		Sinalizadas bool     `form:"sinalizadas"`
 	}
 
@@ -28,6 +29,7 @@ func (a *App) GetQuestoes(ctx *gin.Context) {
 	batch.Filtros.Areas = query.Areas
 	batch.Filtros.Anos = query.Anos
 	batch.Filtros.Sinalizadas = query.Sinalizadas
+	batch.Filtros.Subareas = query.Subareas
 
 	if err := batch.Get(a.DB); err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
