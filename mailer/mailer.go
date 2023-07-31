@@ -31,6 +31,7 @@ func (m *Mailer) SendMail(to []string, subject string, message []byte) error {
 		string(message) + "\r\n")
 	err := smtp.SendMail(m.SMTPHost+":"+m.SMTPPort, m.Auth, m.From, to, msg)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	fmt.Println("Email sent successfully!")
