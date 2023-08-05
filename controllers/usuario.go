@@ -3,6 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -237,7 +238,7 @@ func (a *App) PromoteUsuario(ctx *gin.Context) {
 
 	type promoteUserRequest struct {
 		Email     string `json:"email" binding:"required,email"`
-		NextLevel int16  `json:"nivel" binding:"required"`
+		NextLevel *int16 `json:"nivel" binding:"required"`
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
@@ -248,12 +249,12 @@ func (a *App) PromoteUsuario(ctx *gin.Context) {
 		return
 	}
 
-	if authPayload.UserLevel <= req.NextLevel {
+	if authPayload.UserLevel <= *req.NextLevel {
 		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(errors.New("Usuário não autorizado a realizar a promoção de conta.")))
 		return
 	}
 
-	userToPromote := models.Usuario{Email: req.Email, NivelAcesso: req.NextLevel}
+	userToPromote := models.Usuario{Email: req.Email, NivelAcesso: *req.NextLevel}
 	if err := userToPromote.Promote(a.DB); err != nil {
 		ctx.JSON(http.StatusNotFound, utils.RespondWithError(errors.New("Usuário a ser promovido não encontrado.")))
 		return
@@ -266,18 +267,16 @@ func (a *App) PromoteUsuario(ctx *gin.Context) {
 func (a *App) DeleteUsuario(ctx *gin.Context) {
 
 	type deleteUserRequest struct {
-		Email string `json:"email"`
+		Email string
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*auth.Payload)
 
-	req := deleteUserRequest{}
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
-		return
-	}
+	email := ctx.Param("email")
+	fmt.Println(email)
+	req := deleteUserRequest{Email: email}
 
-	if req.Email == "" {
+	if req.Email == "me" {
 		user := models.Usuario{Email: authPayload.UserID}
 		user.Delete(a.DB)
 		ctx.Status(http.StatusOK)

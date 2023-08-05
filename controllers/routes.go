@@ -28,7 +28,7 @@ func (a *App) initializeRoutes() {
 	public.POST("/usuario/refresh/", a.RenewTokenUsuario)
 	unverified.POST("/usuario/verifica/", a.VerificaUsuario)
 	authorized.GET("/usuario/", a.GetUsuario)
-	authorized.DELETE("/usuario/", a.DeleteUsuario)
+	authorized.DELETE("/usuario/:email", a.DeleteUsuario)
 	moderator.PUT("/usuario/", a.PromoteUsuario)
 
 	// // Rotas de questão
