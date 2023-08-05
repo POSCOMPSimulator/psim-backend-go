@@ -64,5 +64,5 @@ func (a *App) Initialize() error {
 }
 
 func (a *App) Run(addr string) {
-	log.Fatal(http.ListenAndServe(addr, a.Cors.Handler(a.Router)))
+	log.Fatal(http.ListenAndServeTLS(addr, "./certs/server.crt", "./certs/server.key", a.Cors.Handler(a.Router)))
 }
