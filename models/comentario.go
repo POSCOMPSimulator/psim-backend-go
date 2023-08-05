@@ -10,7 +10,6 @@ type Comentario struct {
 	AutorID        string `json:"autor_id"`
 	AutorNome      string `json:"autor"`
 	QuestaoID      int    `json:"questao_id,omitempty"`
-	FotoPerfil     string `json:"foto_perfil"`
 	Texto          string `json:"texto"`
 	DataPublicacao string `json:"data_publicacao"`
 	Sinalizado     int    `json:"numero_sinalizacoes"`
@@ -43,7 +42,7 @@ func (bc *BatchComentarios) GetComentariosSinalizados(db *sql.DB) error {
 func (bc *BatchComentarios) GetComentariosQuestao(db *sql.DB) error {
 
 	query := `
-	SELECT id, data_publicacao, texto, id_usuario, nome, foto_perfil, id_questao, sinalizado
+	SELECT id, data_publicacao, texto, id_usuario, nome, id_questao, sinalizado
 	FROM comentario
 	LEFT JOIN usuario ON usuario.email = comentario.id_usuario
 	WHERE id_questao = $1
@@ -59,7 +58,7 @@ func (bc *BatchComentarios) GetComentariosQuestao(db *sql.DB) error {
 	for rows.Next() {
 		var comment Comentario
 		rows.Scan(&comment.ID, &comment.DataPublicacao, &comment.Texto,
-			&comment.AutorID, &comment.AutorNome, &comment.FotoPerfil, &bc.QuestaoID, &comment.Sinalizado)
+			&comment.AutorID, &comment.AutorNome, &bc.QuestaoID, &comment.Sinalizado)
 		bc.Comentarios = append(bc.Comentarios, comment)
 	}
 
