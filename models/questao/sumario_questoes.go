@@ -20,7 +20,7 @@ func (sq *SumarioQuestoes) Get(db *sql.DB) error {
 
 	rows, err := db.Query("SELECT DISTINCT(ano) FROM questao")
 	if err != nil {
-		return errors.New("Não foi possível obter o sumário.")
+		return errors.New("não foi possível obter o sumário")
 	}
 
 	for rows.Next() {
@@ -31,7 +31,7 @@ func (sq *SumarioQuestoes) Get(db *sql.DB) error {
 
 	rows, err = db.Query("SELECT DISTINCT(area) FROM questao")
 	if err != nil {
-		return errors.New("Não foi possível obter o sumário.")
+		return errors.New("não foi possível obter o sumário")
 	}
 
 	for rows.Next() {
@@ -42,7 +42,7 @@ func (sq *SumarioQuestoes) Get(db *sql.DB) error {
 
 	rows, err = db.Query("SELECT DISTINCT(subarea) FROM questao")
 	if err != nil {
-		return errors.New("Não foi possível obter o sumário.")
+		return errors.New("não foi possível obter o sumário")
 	}
 
 	for rows.Next() {

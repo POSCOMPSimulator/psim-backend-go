@@ -22,7 +22,7 @@ func (eq *ErrosQuestao) Get(db *sql.DB) error {
 
 	rows, err := db.Query("SELECT msg_err FROM sinalizacao_questao WHERE id_questao = $1", eq.ID)
 	if err != nil {
-		return errors.New("Não foi possível obter os erros.")
+		return errors.New("não foi possível obter os erros")
 	}
 
 	for rows.Next() {
@@ -52,7 +52,7 @@ func (eq *ErrosQuestao) Solve(db *sql.DB) error {
 	queryString += ")"
 
 	if _, err := db.Exec(queryString, msgs...); err != nil {
-		return errors.New("Não foi possível resolver os erros.")
+		return errors.New("não foi possível resolver os erros")
 	}
 
 	othereq := ErrosQuestao{ID: eq.ID, Erros: []string{}}
@@ -69,7 +69,7 @@ func (m *MensagemErro) Report(db *sql.DB) error {
 
 	if err := db.QueryRow("SELECT id FROM questao WHERE id = $1", m.ID).Scan(&m.ID); err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New("Questão não foi encontrada.")
+			return errors.New("questão não foi encontrada")
 		}
 		return err
 	}
@@ -80,11 +80,11 @@ func (m *MensagemErro) Report(db *sql.DB) error {
 			return nil
 		}
 
-		return errors.New("Não foi possível reportar o erro.")
+		return errors.New("não foi possível reportar o erro")
 	}
 
 	if _, err := db.Exec("UPDATE questao SET sinalizada = true WHERE id = $1", m.ID); err != nil {
-		return errors.New("Não foi possível reportar o erro.")
+		return errors.New("não foi possível reportar o erro")
 	}
 
 	return nil
