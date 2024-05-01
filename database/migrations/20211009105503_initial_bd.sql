@@ -45,8 +45,7 @@ CREATE TABLE IF NOT EXISTS correcao (
     e_fund smallint NOT NULL,
     e_tec smallint NOT NULL,
     data_finalizacao date NOT NULL,
-    id_usuario text NOT NULL,
-    id_simulado int NOT NULL,
+    id_simulado text NOT NULL,
     PRIMARY KEY (id, id_simulado),
     CONSTRAINT fk_simulado
         FOREIGN KEY (id_simulado)
@@ -55,8 +54,7 @@ CREATE TABLE IF NOT EXISTS correcao (
 );
 
 CREATE TABLE IF NOT EXISTS questoes_simulado (
-    id_simulado int NOT NULL,
-    id_usuario text NOT NULL,
+    id_simulado text NOT NULL,
     id_questao int NOT NULL,
     resposta int,
     PRIMARY KEY (id_simulado, id_questao),
@@ -71,8 +69,7 @@ CREATE TABLE IF NOT EXISTS questoes_simulado (
 );
 
 CREATE TABLE IF NOT EXISTS areas_simulado (
-    id_simulado int NOT NULL,
-    id_usuario text NOT NULL,
+    id_simulado text NOT NULL,
     area text not null,
     PRIMARY KEY (id_simulado, area),
     CONSTRAINT fk_simulado_areas
@@ -82,8 +79,7 @@ CREATE TABLE IF NOT EXISTS areas_simulado (
 );
 
 CREATE TABLE IF NOT EXISTS anos_simulado (
-    id_simulado int NOT NULL,
-    id_usuario text NOT NULL,
+    id_simulado text NOT NULL,
     ano smallint not null,
     PRIMARY KEY (id_simulado, ano),
     CONSTRAINT fk_simulado_anos
