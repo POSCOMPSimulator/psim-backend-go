@@ -15,6 +15,7 @@ type Questao struct {
 	Resposta       int            `json:"resposta"`
 	Enunciado      []string       `json:"enunciado"`
 	ImagensQuestao ImagensQuestao `json:"imagens"`
+	Sinalizada     bool           `json:"sinalizada"`
 }
 
 type ImagensQuestao struct {
