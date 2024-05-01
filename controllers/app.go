@@ -10,14 +10,12 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
-	"poscomp-simulator.com/backend/mailer"
 )
 
 type App struct {
 	Router *gin.Engine
 	DB     *sql.DB
 	Cors   *cors.Cors
-	Mailer *mailer.Mailer
 }
 
 func (a *App) Initialize() error {
@@ -39,13 +37,6 @@ func (a *App) Initialize() error {
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
 	})
-
-	a.Mailer = mailer.NewMailer(
-		os.Getenv("SENDER_EMAIL"),
-		os.Getenv("SENDER_PASSWORD"),
-		os.Getenv("SMTP_HOST"),
-		os.Getenv("SMTP_PORT"),
-	)
 
 	a.Router = gin.Default()
 	a.initializeRoutes()
