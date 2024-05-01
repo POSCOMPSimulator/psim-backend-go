@@ -111,13 +111,13 @@ func (s *Simulado) Create(db *sql.DB) error {
 	INSERT INTO 
 	simulado(nome, estado, tempo_limite, 
 			 quant_tot, quant_mat, quant_fun, 
-			 quant_tec, tempo_restante)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			 quant_tec, tempo_restante, id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	if _, err := db.Exec(query, s.Nome, s.Estado, s.TempoLimite,
 		s.NumeroQuestoes.Tot, s.NumeroQuestoes.Mat, s.NumeroQuestoes.Fun,
-		s.NumeroQuestoes.Tec, s.TempoLimite); err != nil {
+		s.NumeroQuestoes.Tec, s.TempoLimite, s.ID); err != nil {
 		return errors.New("não foi possível criar o simulado")
 	}
 
