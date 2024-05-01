@@ -10,16 +10,14 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
-	"poscomp-simulator.com/backend/auth"
 	"poscomp-simulator.com/backend/mailer"
 )
 
 type App struct {
-	Router     *gin.Engine
-	DB         *sql.DB
-	tokenMaker auth.Maker
-	Cors       *cors.Cors
-	Mailer     *mailer.Mailer
+	Router *gin.Engine
+	DB     *sql.DB
+	Cors   *cors.Cors
+	Mailer *mailer.Mailer
 }
 
 func (a *App) Initialize() error {
@@ -42,13 +40,6 @@ func (a *App) Initialize() error {
 		Debug: true,
 	})
 
-	a.tokenMaker, err = auth.NewPasetoMaker(os.Getenv("TOKEN_SYMMETRIC_KEY"))
-
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
 	a.Mailer = mailer.NewMailer(
 		os.Getenv("SENDER_EMAIL"),
 		os.Getenv("SENDER_PASSWORD"),
@@ -64,5 +55,5 @@ func (a *App) Initialize() error {
 }
 
 func (a *App) Run(addr string) {
-	log.Fatal(http.ListenAndServeTLS(addr, "./certs/server.crt", "./certs/server.key", a.Cors.Handler(a.Router)))
+	log.Fatal(http.ListenAndServe(addr, a.Cors.Handler(a.Router)))
 }

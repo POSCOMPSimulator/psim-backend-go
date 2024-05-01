@@ -15,12 +15,11 @@ const tempoMaximoPQuestao int = 300
 type Simulado struct {
 	questao.BatchQuestoes
 
-	ID                int             `json:"id,omitempty"`
+	ID                string          `json:"id,omitempty"`
 	Nome              string          `json:"nome,omitempty"`
 	Estado            int             `json:"estado"`
 	TempoLimite       int             `json:"tempo_limite"`
 	TempoRestante     int             `json:"tempo_restante"`
-	IdUsuario         string          `json:"id_usuario,omitempty"`
 	Anos              []int           `json:"anos,omitempty"`
 	Areas             []string        `json:"areas,omitempty"`
 	NumeroQuestoes    *NumeroQuestoes `json:"numero_questoes,omitempty"`
@@ -30,14 +29,8 @@ type Simulado struct {
 	Finalizar         bool            `json:"-"`
 }
 
-type BatchSimulados struct {
-	IDUsuario string     `json:"-"`
-	Simulados []Simulado `json:"simulados"`
-}
-
 type BatchRespostas struct {
-	IDSimulado    int       `json:"-"`
-	IDUsuario     string    `json:"-"`
+	IDSimulado    string    `json:"-"`
 	Respostas     Respostas `json:"respostas"`
 	TempoRestante int       `json:"tempo_restante"`
 }
@@ -63,55 +56,23 @@ type Correcao struct {
 	Brancos         NumeroQuestoes `json:"brancos"`
 }
 
-func (bs *BatchSimulados) Get(db *sql.DB) error {
-
-	rows, err := db.Query("SELECT * FROM simulado WHERE id_usuario = $1", bs.IDUsuario)
-	if err != nil {
-		return errors.New("Não foi possível recuperar os simulados.")
-	}
-
-	bs.Simulados = []Simulado{}
-	for rows.Next() {
-		var sim Simulado
-		sim.NumeroQuestoes = &NumeroQuestoes{}
-
-		rows.Scan(&sim.ID, &sim.Nome, &sim.Estado, &sim.TempoLimite,
-			&sim.NumeroQuestoes.Tot, &sim.NumeroQuestoes.Mat, &sim.NumeroQuestoes.Fun,
-			&sim.NumeroQuestoes.Tec, &sim.TempoRestante, &sim.IdUsuario)
-
-		if sim.Estado == 2 {
-
-			if err := sim.getCorrecao(db); err != nil {
-				return err
-			}
-
-		}
-
-		bs.Simulados = append(bs.Simulados, sim)
-
-	}
-
-	return nil
-
-}
-
 func (br *BatchRespostas) Update(db *sql.DB) error {
 
-	stmt, err := db.Prepare("UPDATE questoes_simulado SET resposta = $1 WHERE id_simulado = $2 AND id_usuario = $3 AND id_questao = $4")
+	stmt, err := db.Prepare("UPDATE questoes_simulado SET resposta = $1 WHERE id_simulado = $2 AND id_questao = $3")
 	if err != nil {
-		return errors.New("Não foi possível atualizar as respostas.")
+		return errors.New("não foi possível atualizar as respostas")
 	}
 
 	for i := 0; i < len(br.Respostas.IDs); i++ {
-		_, err = stmt.Exec(br.Respostas.Resps[i], br.IDSimulado, br.IDUsuario, br.Respostas.IDs[i])
+		_, err = stmt.Exec(br.Respostas.Resps[i], br.IDSimulado, br.Respostas.IDs[i])
 		if err != nil {
-			return errors.New("Não foi possível atualizar as respostas.")
+			return errors.New("não foi possível atualizar as respostas")
 		}
 	}
 
-	if _, err := db.Exec("UPDATE simulado SET tempo_restante = $1 WHERE id = $2 AND id_usuario = $3",
-		br.TempoRestante, br.IDSimulado, br.IDUsuario); err != nil {
-		return errors.New("Não foi possível atualizar as respostas.")
+	if _, err := db.Exec("UPDATE simulado SET tempo_restante = $1 WHERE id = $2",
+		br.TempoRestante, br.IDSimulado); err != nil {
+		return errors.New("não foi possível atualizar as respostas")
 	}
 
 	return nil
@@ -121,16 +82,8 @@ func (s *Simulado) Create(db *sql.DB) error {
 
 	s.NumeroQuestoes.Tot = s.NumeroQuestoes.Mat + s.NumeroQuestoes.Fun + s.NumeroQuestoes.Tec
 
-	err := db.QueryRow("SELECT id FROM simulado WHERE nome = $1 AND id_usuario = $2", s.Nome, s.IdUsuario).Scan(&s.ID)
-
-	if err == nil {
-		return errors.New("Simulado de mesmo nome já foi criado.")
-	} else if err != sql.ErrNoRows {
-		return errors.New("Não foi possível criar o simulado.")
-	}
-
 	if !(tempoMinimoPQuestao*s.NumeroQuestoes.Tot <= s.TempoLimite && s.TempoLimite <= tempoMaximoPQuestao*s.NumeroQuestoes.Tot) {
-		return errors.New("Tempo limite fora do intervalo ideal.")
+		return errors.New("tempo limite fora do intervalo ideal")
 	}
 
 	numeroMaximoQuestoes := getNumeroMaximoQuestoes(db, s.Anos)
@@ -149,7 +102,7 @@ func (s *Simulado) Create(db *sql.DB) error {
 		}
 
 		if num > numeroMaximoQuestoes[area] {
-			return errors.New("Número de questões da área " + area + " ultrapassa o limite disponível.")
+			return errors.New("Número de questões da área " + area + " ultrapassa o limite disponível")
 		}
 
 	}
@@ -158,14 +111,14 @@ func (s *Simulado) Create(db *sql.DB) error {
 	INSERT INTO 
 	simulado(nome, estado, tempo_limite, 
 			 quant_tot, quant_mat, quant_fun, 
-			 quant_tec, tempo_restante, id_usuario)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			 quant_tec, tempo_restante)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	if _, err := db.Exec(query, s.Nome, s.Estado, s.TempoLimite,
 		s.NumeroQuestoes.Tot, s.NumeroQuestoes.Mat, s.NumeroQuestoes.Fun,
-		s.NumeroQuestoes.Tec, s.TempoLimite, s.IdUsuario); err != nil {
-		return errors.New("Não foi possível criar o simulado.")
+		s.NumeroQuestoes.Tec, s.TempoLimite); err != nil {
+		return errors.New("não foi possível criar o simulado")
 	}
 
 	return nil
@@ -179,13 +132,13 @@ func (s *Simulado) Get(db *sql.DB) error {
 	}
 
 	if s.Estado != 2 {
-		return errors.New("Simulado não foi finalizado.")
+		return errors.New("simulado não foi finalizado")
 	}
 
 	if err := db.QueryRow("SELECT * FROM simulado WHERE id = $1", s.ID).Scan(&s.ID, &s.Nome, &s.Estado, &s.TempoLimite,
 		&s.NumeroQuestoes.Tot, &s.NumeroQuestoes.Mat, &s.NumeroQuestoes.Fun,
-		&s.NumeroQuestoes.Tec, &s.TempoRestante, &s.IdUsuario); err != nil {
-		return errors.New("Não foi possível obter o simulado.")
+		&s.NumeroQuestoes.Tec, &s.TempoRestante); err != nil {
+		return errors.New("não foi possível obter o simulado")
 	}
 
 	if err := s.getQuestoes(db); err != nil {
@@ -196,8 +149,12 @@ func (s *Simulado) Get(db *sql.DB) error {
 		return err
 	}
 
-	if err := s.getCorrecao(db); err != nil {
-		return err
+	if s.Estado == 2 {
+
+		if err := s.getCorrecao(db); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -214,11 +171,11 @@ func (s *Simulado) Start(db *sql.DB) error {
 	}
 
 	if s.Estado != 0 {
-		return errors.New("Simulado já foi finalizado.")
+		return errors.New("simulado já foi finalizado")
 	}
 
 	if _, err := db.Exec("UPDATE simulado SET estado = 1 WHERE id = $1", s.ID); err != nil {
-		return errors.New("Não foi possível criar simulado")
+		return errors.New("não foi possível criar simulado")
 	}
 
 	if err := s.setQuestoes(db); err != nil {
@@ -238,7 +195,7 @@ func (s *Simulado) Continue(db *sql.DB) error {
 	}
 
 	if s.Estado != 1 {
-		return errors.New("Simulado não foi iniciado ou está finalizado.")
+		return errors.New("simulado não foi iniciado ou está finalizado")
 	}
 
 	s.getQuestoes(db)
@@ -254,49 +211,29 @@ func (s *Simulado) Finish(db *sql.DB) error {
 	}
 
 	if s.Estado != 1 {
-		return errors.New("Simulado não foi iniciado ou está finalizado.")
+		return errors.New("simulado não foi iniciado ou está finalizado")
 	}
 
 	if _, err := db.Exec("UPDATE simulado SET estado = 2 WHERE id = $1", s.ID); err != nil {
-		return errors.New("Não foi possível finalizar o simulado.")
+		return errors.New("não foi possível finalizar o simulado")
 	}
 
 	if err := s.correct(db); err != nil {
-		return errors.New("Simulado não foi possível corrigir o simulado.")
+		return errors.New("simulado não foi possível corrigir o simulado")
 	}
 
 	return nil
 
-}
-
-func (s *Simulado) Delete(db *sql.DB) error {
-
-	if err := s.getEstado(db); err != nil {
-		return err
-	}
-
-	if _, err := db.Exec("DELETE FROM simulado WHERE id = $1 AND id_usuario = $2", s.ID, s.IdUsuario); err != nil {
-		return errors.New("Não foi possível apagar o simulado.")
-	}
-
-	return nil
 }
 
 func (s *Simulado) getEstado(db *sql.DB) error {
 
-	s.NumeroQuestoes = &NumeroQuestoes{}
-	var user string
-
-	if err := db.QueryRow("SELECT id_usuario, estado, tempo_restante, tempo_limite FROM simulado WHERE id = $1", s.ID).
-		Scan(&user, &s.Estado, &s.TempoRestante, &s.TempoLimite); err != nil {
+	if err := db.QueryRow("SELECT estado, tempo_restante, tempo_limite FROM simulado WHERE id = $1", s.ID).
+		Scan(&s.Estado, &s.TempoRestante, &s.TempoLimite); err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New("Simulado não encontrado.")
+			return errors.New("simulado não encontrado")
 		}
-		return errors.New("Não foi recuperar o estado do simulado")
-	}
-
-	if user != s.IdUsuario {
-		return errors.New("Simulado não pertence ao usuário.")
+		return errors.New("não foi recuperar o estado do simulado")
 	}
 
 	return nil
@@ -313,9 +250,9 @@ func (s *Simulado) setQuestoes(db *sql.DB) error {
 
 	if err := db.QueryRow("SELECT quant_mat, quant_fun, quant_tec FROM simulado WHERE id = $1", s.ID).Scan(&qmat, &qfun, &qtec); err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New("Simulado não encontrado.")
+			return errors.New("simulado não encontrado")
 		}
-		return errors.New("Não foi recuperar o estado do simulado")
+		return errors.New("não foi recuperar o estado do simulado")
 	}
 
 	queryString := `
@@ -338,17 +275,18 @@ func (s *Simulado) setQuestoes(db *sql.DB) error {
 	`
 
 	rows, err := db.Query(queryString, qmat, qfun, qtec)
-	stmt, err2 := db.Prepare("INSERT INTO questoes_simulado(id_simulado, id_usuario, id_questao) VALUES ($1, $2, $3)")
-	defer stmt.Close()
+	stmt, err2 := db.Prepare("INSERT INTO questoes_simulado(id_simulado, id_questao) VALUES ($1, $2)")
 
 	if err != nil || err2 != nil {
-		return errors.New("Não foi possível selecionar as questões.")
+		return errors.New("não foi possível selecionar as questões")
 	}
+
+	defer stmt.Close()
 
 	for rows.Next() {
 		var idq int
 		rows.Scan(&idq)
-		stmt.Exec(s.ID, s.IdUsuario, idq)
+		stmt.Exec(s.ID, idq)
 	}
 
 	return nil
@@ -388,7 +326,7 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 	s.Respostas = Respostas{IDs: []int{}, Resps: []int{}}
 	rows, err := db.Query("SELECT id_questao, resposta FROM questoes_simulado WHERE id_simulado = $1", s.ID)
 	if err != nil {
-		return errors.New("Não foi possível obter as respostas.")
+		return errors.New("não foi possível obter as respostas")
 	}
 
 	for rows.Next() {
@@ -460,9 +398,9 @@ func (s *Simulado) correct(db *sql.DB) error {
 	INTO correcao(b_total, b_mat, b_fund, b_tec,
 				  a_total, a_mat, a_fund, a_tec,
 				  e_total, e_mat, e_fund, e_tec,
-				  data_finalizacao, id_usuario, id_simulado)
+				  data_finalizacao, id_simulado)
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-		   $11, $12, $13, $14, $15) 
+		   $11, $12, $13, $14) 
 	`
 
 	loc, _ := time.LoadLocation("America/Sao_Paulo")
@@ -473,7 +411,7 @@ func (s *Simulado) correct(db *sql.DB) error {
 		s.Correcao.Brancos.Tot, s.Correcao.Brancos.Mat, s.Correcao.Brancos.Fun, s.Correcao.Brancos.Tec,
 		s.Correcao.Acertos.Tot, s.Correcao.Acertos.Mat, s.Correcao.Acertos.Fun, s.Correcao.Acertos.Tec,
 		s.Correcao.Erros.Tot, s.Correcao.Erros.Mat, s.Correcao.Erros.Fun, s.Correcao.Erros.Tec,
-		s.Correcao.DataFinalizacao, s.IdUsuario, s.ID); err != nil {
+		s.Correcao.DataFinalizacao, s.ID); err != nil {
 		return err
 	}
 
@@ -497,7 +435,7 @@ func (s *Simulado) getCorrecao(db *sql.DB) error {
 			&s.Correcao.Acertos.Tot, &s.Correcao.Acertos.Mat, &s.Correcao.Acertos.Fun, &s.Correcao.Acertos.Tec,
 			&s.Correcao.Erros.Tot, &s.Correcao.Erros.Mat, &s.Correcao.Erros.Fun, &s.Correcao.Erros.Tec,
 			&s.Correcao.DataFinalizacao); err != nil {
-		return errors.New("Não foi possível obter a correção")
+		return errors.New("não foi possível obter a correção")
 	}
 
 	s.Correcao.TempoRealizacao = s.TempoLimite - s.TempoRestante
