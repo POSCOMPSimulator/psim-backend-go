@@ -49,7 +49,7 @@ func (bq *BatchQuestoes) SelectQuestoes(db *sql.DB, query string, args []interfa
 		q := Questao{}
 		err := rows.Scan(&q.ID, &q.Ano, &q.Numero, &q.Area, &q.Subarea,
 			&q.Alternativas[0], &q.Alternativas[1], &q.Alternativas[2],
-			&q.Alternativas[3], &q.Alternativas[4], &q.Resposta, &q.Sinalizada)
+			&q.Alternativas[3], &q.Alternativas[4], &q.Resposta)
 
 		if err != nil {
 			return err

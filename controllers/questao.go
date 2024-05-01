@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -43,5 +44,30 @@ func (a *App) GetQSumario(ctx *gin.Context) {
 	var sq questao.SumarioQuestoes
 	sq.Get(a.DB)
 	ctx.JSON(http.StatusOK, sq)
+
+}
+
+func (a *App) CreateQuestao(ctx *gin.Context) {
+
+	admin_code := ctx.Param("admincode")
+
+	if admin_code != a.AdminCode {
+		err := errors.New("sem autorização")
+		ctx.JSON(http.StatusUnauthorized, utils.RespondWithError(err))
+		return
+	}
+
+	var q questao.Questao
+	if err := ctx.ShouldBindJSON(&q); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
+
+	if err := q.Create(a.DB); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
+		return
+	}
+
+	ctx.Status(http.StatusCreated)
 
 }

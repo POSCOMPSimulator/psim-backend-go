@@ -13,9 +13,10 @@ import (
 )
 
 type App struct {
-	Router *gin.Engine
-	DB     *sql.DB
-	Cors   *cors.Cors
+	Router    *gin.Engine
+	DB        *sql.DB
+	Cors      *cors.Cors
+	AdminCode string
 }
 
 func (a *App) Initialize() error {
@@ -23,7 +24,7 @@ func (a *App) Initialize() error {
 	_ = godotenv.Load()
 
 	var err error
-	a.DB, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	a.DB, err = sql.Open("postgres", os.Getenv("DATABASE_URL")+"?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -37,6 +38,8 @@ func (a *App) Initialize() error {
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
 	})
+
+	a.AdminCode = os.Getenv("ADMIN_CODE")
 
 	a.Router = gin.Default()
 	a.initializeRoutes()

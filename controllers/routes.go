@@ -16,6 +16,7 @@ func (a *App) initializeRoutes() {
 	// // Rotas de questão
 	public.GET("/questao/", a.GetQuestoes)
 	public.GET("/questao/sumario/", a.GetQSumario)
+	public.POST("/questao/:admincode/", a.CreateQuestao)
 
 	// // Rotas de simulado
 	public.POST("/simulado/", a.CreateSimulado)
