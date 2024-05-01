@@ -33,7 +33,7 @@ func (a *App) CreateSimulado(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusCreated)
+	ctx.JSON(http.StatusCreated, map[string]string{"text": sim.ID})
 
 }
 
