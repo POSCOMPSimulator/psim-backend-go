@@ -24,7 +24,7 @@ type Simulado struct {
 	Areas             []string        `json:"areas,omitempty"`
 	NumeroQuestoes    *NumeroQuestoes `json:"numero_questoes,omitempty"`
 	Correcao          *Correcao       `json:"correcao,omitempty"`
-	Respostas         Respostas       `json:"respostas_atuais,omitempty"`
+	Respostas         map[int]int     `json:"respostas_atuais,omitempty"`
 	ContinuarSimulado bool            `json:"-"`
 	Finalizar         bool            `json:"-"`
 }
@@ -127,7 +127,7 @@ func (s *Simulado) Create(db *sql.DB) error {
 
 func (s *Simulado) Get(db *sql.DB) error {
 
-	if err := s.getEstado(db); err != nil {
+	if err := s.GetEstado(db); err != nil {
 		return err
 	}
 
@@ -135,6 +135,7 @@ func (s *Simulado) Get(db *sql.DB) error {
 		return errors.New("simulado não foi finalizado")
 	}
 
+	s.NumeroQuestoes = &NumeroQuestoes{}
 	if err := db.QueryRow("SELECT * FROM simulado WHERE id = $1", s.ID).Scan(&s.ID, &s.Nome, &s.Estado, &s.TempoLimite,
 		&s.NumeroQuestoes.Tot, &s.NumeroQuestoes.Mat, &s.NumeroQuestoes.Fun,
 		&s.NumeroQuestoes.Tec, &s.TempoRestante); err != nil {
@@ -149,12 +150,8 @@ func (s *Simulado) Get(db *sql.DB) error {
 		return err
 	}
 
-	if s.Estado == 2 {
-
-		if err := s.getCorrecao(db); err != nil {
-			return err
-		}
-
+	if err := s.getCorrecao(db); err != nil {
+		return err
 	}
 
 	return nil
@@ -162,12 +159,12 @@ func (s *Simulado) Get(db *sql.DB) error {
 
 func (s *Simulado) Start(db *sql.DB) error {
 
-	if err := s.getEstado(db); err != nil {
+	if err := s.GetEstado(db); err != nil {
 		return err
 	}
 
 	if s.Estado == 1 {
-		return s.Continue(db)
+		return s.Reset(db)
 	}
 
 	if s.Estado != 0 {
@@ -190,7 +187,7 @@ func (s *Simulado) Start(db *sql.DB) error {
 
 func (s *Simulado) Continue(db *sql.DB) error {
 
-	if err := s.getEstado(db); err != nil {
+	if err := s.GetEstado(db); err != nil {
 		return err
 	}
 
@@ -204,9 +201,37 @@ func (s *Simulado) Continue(db *sql.DB) error {
 	return nil
 }
 
+func (s *Simulado) Reset(db *sql.DB) error {
+
+	if err := s.GetEstado(db); err != nil {
+		return err
+	}
+
+	if s.Estado != 1 {
+		return errors.New("simulado não foi iniciado ou está finalizado")
+	}
+
+	if _, err := db.Exec("UPDATE simulado SET tempo_restante = $1 WHERE id = $2", s.TempoLimite, s.ID); err != nil {
+		return errors.New("não foi possível continuar o simulado")
+	}
+
+	if _, err := db.Exec("UPDATE questoes_simulado SET resposta = -1 WHERE id_simulado = $1", s.ID); err != nil {
+		return errors.New("não foi possível finalizar o simulado")
+	}
+
+	if err := s.GetEstado(db); err != nil {
+		return err
+	}
+
+	s.getQuestoes(db)
+	s.getRespostas(db)
+
+	return nil
+}
+
 func (s *Simulado) Finish(db *sql.DB) error {
 
-	if err := s.getEstado(db); err != nil {
+	if err := s.GetEstado(db); err != nil {
 		return err
 	}
 
@@ -226,7 +251,7 @@ func (s *Simulado) Finish(db *sql.DB) error {
 
 }
 
-func (s *Simulado) getEstado(db *sql.DB) error {
+func (s *Simulado) GetEstado(db *sql.DB) error {
 
 	if err := db.QueryRow("SELECT estado, tempo_restante, tempo_limite FROM simulado WHERE id = $1", s.ID).
 		Scan(&s.Estado, &s.TempoRestante, &s.TempoLimite); err != nil {
@@ -323,7 +348,7 @@ func (s *Simulado) getQuestoes(db *sql.DB) error {
 
 func (s *Simulado) getRespostas(db *sql.DB) error {
 
-	s.Respostas = Respostas{IDs: []int{}, Resps: []int{}}
+	s.Respostas = map[int]int{}
 	rows, err := db.Query("SELECT id_questao, resposta FROM questoes_simulado WHERE id_simulado = $1", s.ID)
 	if err != nil {
 		return errors.New("não foi possível obter as respostas")
@@ -333,12 +358,11 @@ func (s *Simulado) getRespostas(db *sql.DB) error {
 		var id int
 		var resp int
 		err := rows.Scan(&id, &resp)
-		s.Respostas.IDs = append(s.Respostas.IDs, id)
 
 		if err != nil && err.Error() == `sql: Scan error on column index 1, name "resposta": converting NULL to int is unsupported` {
-			s.Respostas.Resps = append(s.Respostas.Resps, -1)
+			s.Respostas[id] = -1
 		} else {
-			s.Respostas.Resps = append(s.Respostas.Resps, resp)
+			s.Respostas[id] = resp
 		}
 
 	}

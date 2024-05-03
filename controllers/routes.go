@@ -21,6 +21,7 @@ func (a *App) initializeRoutes() {
 	// // Rotas de simulado
 	public.POST("/simulado/", a.CreateSimulado)
 	public.GET("/simulado/:id/", a.GetSimulado)
+	public.GET("/simulado/:id/state", a.GetStateSimulado)
 	public.PUT("/simulado/:id/:to_state/", a.UpdateStateSimulado)
 	public.PATCH("/simulado/:id/", a.UpdateRespostasSimulado)
 

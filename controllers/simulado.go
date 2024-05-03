@@ -37,6 +37,21 @@ func (a *App) CreateSimulado(ctx *gin.Context) {
 
 }
 
+func (a *App) GetStateSimulado(ctx *gin.Context) {
+
+	var sim models.Simulado
+
+	sim.ID = ctx.Param("id")
+
+	if err := sim.GetEstado(a.DB); err != nil {
+		ctx.JSON(http.StatusNotFound, utils.RespondWithError(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, sim)
+
+}
+
 func (a *App) GetSimulado(ctx *gin.Context) {
 
 	var sim models.Simulado
