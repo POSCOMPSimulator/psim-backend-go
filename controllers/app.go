@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
+	"github.com/teris-io/shortid"
 )
 
 type App struct {
@@ -17,11 +18,13 @@ type App struct {
 	DB        *sql.DB
 	Cors      *cors.Cors
 	AdminCode string
+	SimIDGen  *shortid.Shortid
 }
 
 func (a *App) Initialize() error {
 
 	_ = godotenv.Load()
+	sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
 
 	var err error
 	a.DB, err = sql.Open("postgres", os.Getenv("DATABASE_URL")+"?sslmode=disable")
@@ -40,6 +43,7 @@ func (a *App) Initialize() error {
 	})
 
 	a.AdminCode = os.Getenv("ADMIN_CODE")
+	a.SimIDGen = sid
 
 	a.Router = gin.Default()
 	a.initializeRoutes()

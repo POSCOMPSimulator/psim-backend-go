@@ -6,21 +6,20 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"poscomp-simulator.com/backend/models"
 	"poscomp-simulator.com/backend/utils"
 )
 
 func (a *App) CreateSimulado(ctx *gin.Context) {
 
-	id, err := uuid.NewRandom()
+	var err error
+	var sim models.Simulado
+	sim.ID, err = a.SimIDGen.Generate()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(errors.New("não foi possível criar o simulado")))
 		return
 	}
 
-	var sim models.Simulado
-	sim.ID = id.String()
 	sim.Estado = 0
 
 	if err := ctx.ShouldBindJSON(&sim); err != nil {
