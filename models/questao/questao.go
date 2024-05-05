@@ -96,6 +96,10 @@ func (q *Questao) Create(db *sql.DB) error {
 
 func (q *Questao) Update(db *sql.DB) error {
 
+	if err := db.QueryRow("SELECT id FROM questao WHERE ano = $1 AND numero = $2", q.Ano, q.Numero).Scan(&q.ID); err != nil {
+		return errors.New("questão não pôde ser editada - " + err.Error())
+	}
+
 	var queries = [3]string{
 		`UPDATE questao
 		 SET subarea = $1, alternativa_a = $2, alternativa_b = $3, alternativa_c = $4, alternativa_d = $5, alternativa_e = $6, gabarito = $7
