@@ -71,3 +71,18 @@ func (a *App) CreateQuestao(ctx *gin.Context) {
 	ctx.Status(http.StatusCreated)
 
 }
+
+func (a *App) UpdateQuestao(ctx *gin.Context) {
+
+	var q questao.Questao
+	if err := ctx.ShouldBindJSON(&q); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
+		return
+	}
+
+	if err := q.Update(a.DB); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
+		return
+	}
+
+}
