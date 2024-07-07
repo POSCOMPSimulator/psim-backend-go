@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS questao (
     alternativa_d text NOT NULL,
     alternativa_e text NOT NULL,
     gabarito int NOT NULL,
+    explicacao text,
     sinalizada boolean NOT NULL DEFAULT false,
     PRIMARY KEY (id)
 );

@@ -16,6 +16,7 @@ type Questao struct {
 	Enunciado      []string       `json:"enunciado"`
 	ImagensQuestao ImagensQuestao `json:"imagens"`
 	Sinalizada     bool           `json:"sinalizada"`
+	Explicacao     string         `json:"explicacao"`
 }
 
 type ImagensQuestao struct {
@@ -34,8 +35,8 @@ func (q *Questao) Create(db *sql.DB) error {
 	}
 
 	var queries = [3]string{
-		`INSERT INTO questao(ano, numero, area, subarea, alternativa_a, alternativa_b, alternativa_c, alternativa_d, alternativa_e, gabarito)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`INSERT INTO questao(ano, numero, area, subarea, alternativa_a, alternativa_b, alternativa_c, alternativa_d, alternativa_e, gabarito, explicacao)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id
 		`,
 		"INSERT INTO enunciado_questao(id_questao, ordem, texto) VALUES($1, $2, $3)",
@@ -45,7 +46,7 @@ func (q *Questao) Create(db *sql.DB) error {
 	if err := db.QueryRow(queries[0], q.Ano, q.Numero, q.Area,
 		q.Subarea, q.Alternativas[0], q.Alternativas[1],
 		q.Alternativas[2], q.Alternativas[3],
-		q.Alternativas[4], q.Resposta).Scan(&q.ID); err != nil {
+		q.Alternativas[4], q.Resposta, q.Explicacao).Scan(&q.ID); err != nil {
 		return errors.New("questão não pode ser criada")
 	}
 
@@ -102,15 +103,15 @@ func (q *Questao) Update(db *sql.DB) error {
 
 	var queries = [3]string{
 		`UPDATE questao
-		 SET subarea = $1, alternativa_a = $2, alternativa_b = $3, alternativa_c = $4, alternativa_d = $5, alternativa_e = $6, gabarito = $7
-		 WHERE id = $8
+		 SET subarea = $1, alternativa_a = $2, alternativa_b = $3, alternativa_c = $4, alternativa_d = $5, alternativa_e = $6, gabarito = $7, explicacao = $8
+		 WHERE id = $9
 		`,
 		"INSERT INTO enunciado_questao(id_questao, ordem, texto) VALUES($1, $2, $3)",
 		"INSERT INTO imagem_questao(id_questao, tipo, url_img) VALUES($1, $2, $3)",
 	}
 
 	if _, err := db.Exec(queries[0], q.Subarea, q.Alternativas[0], q.Alternativas[1],
-		q.Alternativas[2], q.Alternativas[3], q.Alternativas[4], q.Resposta, q.ID); err != nil {
+		q.Alternativas[2], q.Alternativas[3], q.Alternativas[4], q.Resposta, q.Explicacao, q.ID); err != nil {
 		return errors.New("questão não pôde ser editada - " + err.Error())
 	}
 
