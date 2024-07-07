@@ -16,7 +16,7 @@ type Questao struct {
 	Enunciado      []string       `json:"enunciado"`
 	ImagensQuestao ImagensQuestao `json:"imagens"`
 	Sinalizada     bool           `json:"sinalizada"`
-	Explicacao     string         `json:"explicacao"`
+	Explicacao     sql.NullString `json:"explicacao"`
 }
 
 type ImagensQuestao struct {
@@ -111,7 +111,7 @@ func (q *Questao) Update(db *sql.DB) error {
 	}
 
 	if _, err := db.Exec(queries[0], q.Subarea, q.Alternativas[0], q.Alternativas[1],
-		q.Alternativas[2], q.Alternativas[3], q.Alternativas[4], q.Resposta, q.Explicacao, q.ID); err != nil {
+		q.Alternativas[2], q.Alternativas[3], q.Alternativas[4], q.Resposta, q.Explicacao.String, q.ID); err != nil {
 		return errors.New("questão não pôde ser editada - " + err.Error())
 	}
 
