@@ -47,48 +47,48 @@ func (q *Questao) Create(db *sql.DB) error {
 		q.Subarea, q.Alternativas[0], q.Alternativas[1],
 		q.Alternativas[2], q.Alternativas[3],
 		q.Alternativas[4], q.Resposta, q.Explicacao).Scan(&q.ID); err != nil {
-		return errors.New("questão não pode ser criada")
+		return errors.New("questão não pode ser criada:" + err.Error())
 	}
 
 	for e, v := range q.Enunciado {
 		if _, err := db.Exec(queries[1], q.ID, e, v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.Enunciado {
 		if _, err := db.Exec(queries[2], q.ID, "", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.A {
 		if _, err := db.Exec(queries[2], q.ID, "A", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.B {
 		if _, err := db.Exec(queries[2], q.ID, "B", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.C {
 		if _, err := db.Exec(queries[2], q.ID, "C", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.D {
 		if _, err := db.Exec(queries[2], q.ID, "D", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 
 	for _, v := range q.ImagensQuestao.E {
 		if _, err := db.Exec(queries[2], q.ID, "E", v); err != nil {
-			return errors.New("questão não pode ser criada")
+			return errors.New("questão não pode ser criada:" + err.Error())
 		}
 	}
 

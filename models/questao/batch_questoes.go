@@ -17,7 +17,9 @@ func (bq *BatchQuestoes) Get(db *sql.DB) error {
 	bq.Questoes = []Questao{}
 
 	queryString, args := bq.mountFilterQuery()
-	bq.SelectQuestoes(db, queryString, args)
+	if err := bq.SelectQuestoes(db, queryString, args); err != nil {
+		return err
+	}
 
 	sort.Slice(bq.Questoes, func(i, j int) bool {
 		if bq.Questoes[i].Ano < bq.Questoes[j].Ano {
@@ -146,7 +148,9 @@ func (bq *BatchQuestoes) mountFilterQuery() (string, []interface{}) {
 	max_len := len(bq.Filtros.Anos) + len(bq.Filtros.Areas) + len(bq.Filtros.Subareas)
 
 	args, ind_args, ind_query := make([]interface{}, max_len), 0, 1
-	queries := []string{"SELECT * FROM questao"}
+	queries := []string{
+		"SELECT id, ano, numero, area, subarea, alternativa_a, alternativa_b, alternativa_c, alternativa_d, alternativa_e, gabarito, sinalizada, explicacao FROM questao",
+	}
 
 	if len(bq.Filtros.Anos) > 0 {
 

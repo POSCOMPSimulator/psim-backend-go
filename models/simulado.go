@@ -179,7 +179,10 @@ func (s *Simulado) Start(db *sql.DB) error {
 		return err
 	}
 
-	s.getQuestoes(db)
+	if err := s.getQuestoes(db); err != nil {
+		return err
+	}
+
 	s.getRespostas(db)
 
 	return nil
@@ -195,7 +198,10 @@ func (s *Simulado) Continue(db *sql.DB) error {
 		return errors.New("simulado não foi iniciado ou está finalizado")
 	}
 
-	s.getQuestoes(db)
+	if err := s.getQuestoes(db); err != nil {
+		return err
+	}
+
 	s.getRespostas(db)
 
 	return nil
@@ -223,7 +229,10 @@ func (s *Simulado) Reset(db *sql.DB) error {
 		return err
 	}
 
-	s.getQuestoes(db)
+	if err := s.getQuestoes(db); err != nil {
+		return err
+	}
+
 	s.getRespostas(db)
 
 	return nil
@@ -323,13 +332,18 @@ func (s *Simulado) getQuestoes(db *sql.DB) error {
 	s.Questoes = []questao.Questao{}
 
 	query := `
-	SELECT questao.*
+	SELECT id, ano, numero, area, subarea,
+		   alternativa_a, alternativa_b, alternativa_c,
+		   alternativa_d, alternativa_e, gabarito, sinalizada,
+		   explicacao
 	FROM questoes_simulado
 	LEFT JOIN questao ON questao.id = questoes_simulado.id_questao
 	WHERE id_simulado = $1`
 	args := []interface{}{s.ID}
 
-	s.SelectQuestoes(db, query, args)
+	if err := s.SelectQuestoes(db, query, args); err != nil {
+		return err
+	}
 
 	sort.Slice(s.Questoes, func(i, j int) bool {
 		if s.Questoes[i].Numero < s.Questoes[j].Numero {

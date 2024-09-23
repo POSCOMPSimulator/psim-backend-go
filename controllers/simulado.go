@@ -107,25 +107,13 @@ func (a *App) UpdateStateSimulado(ctx *gin.Context) {
 
 	case "FINALIZAR":
 
-		var bresp models.BatchRespostas
-		bresp.IDSimulado = sim.ID
-
-		if err := ctx.ShouldBindJSON(&bresp); err != nil {
-			ctx.JSON(http.StatusBadRequest, utils.RespondValidationError(err))
-			return
-		}
-
-		if err := bresp.Update(a.DB); err != nil {
-			ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
-			return
-		}
-
 		if err = sim.Finish(a.DB); err != nil {
 			ctx.JSON(http.StatusBadRequest, utils.RespondWithError(err))
 			return
 		}
 
 		ctx.Status(http.StatusAccepted)
+		return
 
 	default:
 
